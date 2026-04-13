@@ -86,7 +86,7 @@
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     .page-header-left {}
     .page-title {
@@ -140,6 +140,67 @@
       transition: background 0.1s;
     }
     .btn-refresh:hover { background: #0057b8; }
+
+    /* ── Status Summary Strip ───────────────────────────────────── */
+    .status-strip {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .status-strip-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 10px 16px;
+      border-right: 1px solid var(--border);
+    }
+    .status-strip-item:last-child { border-right: none; }
+    .status-strip-label {
+      font-size: 11px;
+      color: var(--label);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      white-space: nowrap;
+    }
+    .status-strip-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--title);
+      line-height: 1.2;
+    }
+    .status-strip-sub {
+      font-size: 11px;
+      color: var(--label);
+    }
+    .status-strip-item.ok   .status-strip-value { color: var(--positive); }
+    .status-strip-item.warn .status-strip-value { color: var(--high); }
+    .status-strip-item.risk .status-strip-value { color: var(--urgent); }
+    .status-strip-divider {
+      width: 1px;
+      background: var(--border);
+      align-self: stretch;
+      flex-shrink: 0;
+    }
+    .status-strip-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      color: var(--label);
+      padding: 6px 12px 4px;
+      white-space: nowrap;
+      display: flex;
+      align-items: flex-start;
+      writing-mode: horizontal-tb;
+      background: #fafafa;
+      border-right: 1px solid var(--border);
+    }
 
     /* ── Tabs ─────────────────────────────────────────────────── */
     .tab-bar {
@@ -443,6 +504,42 @@
             </svg>
             Refresh
           </button>
+        </div>
+      </div>
+
+      <!-- ── Status Summary Strip ──────────────────────────────── -->
+      <div class="status-strip">
+        <div class="status-strip-section-label">Running normally</div>
+        <div class="status-strip-item ok">
+          <span class="status-strip-label">POs Confirmed</span>
+          <span class="status-strip-value">847</span>
+          <span class="status-strip-sub">auto-confirmed this week</span>
+        </div>
+        <div class="status-strip-item ok">
+          <span class="status-strip-label">ASNs Received</span>
+          <span class="status-strip-value">312</span>
+          <span class="status-strip-sub">on-time &amp; on-quantity</span>
+        </div>
+        <div class="status-strip-item ok">
+          <span class="status-strip-label">Spend on Track</span>
+          <span class="status-strip-value">$14.2M</span>
+          <span class="status-strip-sub">no action needed</span>
+        </div>
+        <div class="status-strip-section-label" style="color:#bb0000;background:#fff5f5;border-right-color:#ffd0d0;">Needs attention</div>
+        <div class="status-strip-item risk">
+          <span class="status-strip-label">OC Deviations</span>
+          <span class="status-strip-value">17</span>
+          <span class="status-strip-sub">3 exceed tolerance</span>
+        </div>
+        <div class="status-strip-item warn">
+          <span class="status-strip-label">Shipment Delays</span>
+          <span class="status-strip-value">4</span>
+          <span class="status-strip-sub">ASN missing or late</span>
+        </div>
+        <div class="status-strip-item risk">
+          <span class="status-strip-label">At-Risk Spend</span>
+          <span class="status-strip-value">$629K</span>
+          <span class="status-strip-sub">across 9 open exceptions</span>
         </div>
       </div>
 

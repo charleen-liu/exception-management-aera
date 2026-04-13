@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forecast — SAP Business Network</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:      #0070f2;
+      --white:      #ffffff;
+      --page-bg:    #f5f6f7;
+      --title:      #1d2d3e;
+      --label:      #556b82;
+      --border:     #e5e5e5;
+      --border-mid: #d9d9d9;
+      --urgent:     #bb0000;
+      --positive:   #256f3a;
+      --ai-blue:    #0057b8;
+      --info:       #0064d9;
+      --radius-sm:  4px;
+      --radius:     8px;
+    }
+
+    body {
+      font-family: "72","72full",Arial,Helvetica,sans-serif;
+      font-size: 14px;
+      background: var(--page-bg);
+      color: var(--title);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Layout ──────────────────────────────────────────────── */
+    .app-body { display: flex; flex: 1; min-height: 0; }
+
+    /* ── Main ────────────────────────────────────────────────── */
+    .main {
+      flex: 1; display: flex; flex-direction: column;
+      min-height: 0; min-width: 0; overflow: hidden;
+    }
+
+    /* ── Object Page Header (white, sticky) ─────────────────── */
+    .obj-header {
+      background: #fff;
+      border-bottom: 1px solid var(--border-mid);
+      flex-shrink: 0;
+      padding: 0;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      display: flex; align-items: center; gap: 5px;
+      padding: 10px 24px 0;
+      font-size: 13px;
+    }
+    .breadcrumb a { color: var(--info); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb-sep { color: var(--label); }
+
+    /* Title row — title + View Comments on same line */
+    .obj-title-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 24px 10px;
+    }
+    .obj-title {
+      font-family: "72Black","72Blackfull","72","72full",Arial,sans-serif;
+      font-size: 1.375rem; color: #131e29; line-height: 1.25;
+    }
+    .btn-view-comments {
+      padding: 0 14px; height: 30px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border-mid); background: #fff;
+      font-size: 13px; color: var(--title); cursor: pointer; white-space: nowrap;
+      font-family: inherit;
+    }
+    .btn-view-comments:hover { background: #f5f6f7; }
+
+    /* AI card — matches image layout */
+    .ai-rec-card {
+      margin: 0 24px 10px;
+      background: #fff;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+    }
+    .ai-rec-title-row {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 700; color: var(--title);
+      margin-bottom: 10px;
+    }
+    /* 3-column body: Business Impact | Root Cause | Priority+Cost+Buttons */
+    .ai-rec-body-row {
+      display: flex; align-items: flex-start; gap: 0;
+    }
+    .ai-col-impact { flex: 0 0 280px; padding-right: 24px; }
+    .ai-col-cause  { flex: 1; padding-right: 24px; }
+    .ai-col-meta   {
+      flex: 0 0 auto; min-width: 200px;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+    }
+    .ai-col-label { font-size: 12px; font-weight: 700; color: var(--title); margin-bottom: 3px; }
+    .ai-col-text  { font-size: 13px; color: var(--label); line-height: 1.5; }
+    .ai-meta-pair { display: flex; gap: 24px; }
+    .ai-meta-item { display: flex; flex-direction: column; gap: 2px; }
+    .ai-meta-item-label {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 12px; color: var(--title);
+    }
+    .ai-meta-item-val { font-size: 14px; font-weight: 700; }
+    .ai-meta-item-val.urgent { color: var(--urgent); }
+    .ai-meta-item-val.cost   { color: var(--urgent); }
+    .ai-rec-actions { display: flex; gap: 8px; }
+    .btn-accept {
+      font-size: 13px; font-family: inherit; padding: 0 18px; height: 30px;
+      border-radius: var(--radius-sm); border: 1px solid var(--info);
+      background: var(--info); color: #fff; cursor: pointer;
+    }
+    .btn-accept:hover { background: #0057b8; border-color: #0057b8; }
+    .btn-modify {
+      font-size: 13px; font-family: inherit; padding: 0 14px; height: 30px;
+      border-radius: var(--radius-sm); border: 1px solid var(--info);
+      background: #fff; color: var(--info); cursor: pointer;
+    }
+    .btn-modify:hover { background: #eaf3ff; }
+    .btn-dismiss {
+      font-size: 13px; font-family: inherit; padding: 0 14px; height: 30px;
+      border-radius: var(--radius-sm); border: 1px solid var(--border-mid);
+      background: #fff; color: var(--title); cursor: pointer;
+    }
+    .btn-dismiss:hover { background: #f5f6f7; }
+
+    /* Customer info row — no card border, inline fields */
+    .cust-info-row {
+      display: flex; align-items: center; gap: 0;
+      padding: 8px 24px 10px;
+    }
+    .cust-icon-box {
+      width: 44px; height: 44px; border-radius: var(--radius-sm);
+      background: #f5f6f7; border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-right: 12px;
+    }
+    .cust-name-col { flex: 0 0 auto; margin-right: 28px; }
+    .cust-name-col p { font-size: 13px; color: var(--label); line-height: 1.6; }
+    .cust-divider { width: 1px; height: 38px; background: var(--border); margin-right: 28px; }
+    .cust-fields { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+    .c-field { display: flex; flex-direction: column; gap: 2px; }
+    .c-field-label { font-size: 12px; color: var(--title); font-weight: 400; }
+    .c-field-val   { font-size: 13px; color: var(--title); }
+    .c-field-link  { font-size: 13px; color: var(--info); text-decoration: none; }
+    .c-field-link:hover { text-decoration: underline; }
+    .c-field-val.positive { color: var(--positive); }
+
+    /* Tab bar */
+    .tab-bar {
+      display: flex; align-items: flex-end; gap: 0;
+      padding: 0 24px;
+      border-top: 1px solid var(--border);
+    }
+    .tab-item {
+      padding: 9px 16px 8px; cursor: pointer;
+      font-size: 14px; font-weight: 400; color: var(--label);
+      border: none; background: none;
+      white-space: nowrap; flex-shrink: 0;
+      border-bottom: 3px solid transparent;
+    }
+    .tab-item:hover { color: var(--title); }
+    .tab-item.active { color: var(--info); font-weight: 700; border-bottom-color: var(--info); }
+
+    /* ── Object Page Content (scrollable) ───────────────────── */
+    .obj-content {
+      flex: 1; overflow-y: auto; padding: 16px 24px 24px;
+      scrollbar-width: none;
+    }
+    .obj-content::-webkit-scrollbar { display: none; }
+
+
+    /* ── Chart Card ──────────────────────────────────────────── */
+    .chart-card {
+      background: #fff;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius);
+      padding: 16px 18px 0 18px;
+      margin-bottom: 16px;
+    }
+    .chart-controls {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .chart-title { font-size: 14px; font-weight: 700; color: var(--title); flex-shrink: 0; }
+    .chart-ctrl-group { display: flex; align-items: center; gap: 6px; }
+    .chart-ctrl-group label { font-size: 12px; color: var(--label); }
+    .chart-select {
+      height: 28px; border: 1px solid var(--border-mid); border-radius: var(--radius-sm);
+      padding: 0 8px; font-size: 13px; color: var(--title); background: #fff;
+      min-width: 110px; cursor: pointer;
+    }
+    .chart-date-input {
+      height: 28px; border: 1px solid var(--border-mid); border-radius: var(--radius-sm);
+      padding: 0 8px; font-size: 13px; color: var(--title); background: #fff; width: 110px;
+    }
+    .chart-nav-btn {
+      width: 28px; height: 28px; border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm); background: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; color: var(--label);
+    }
+    .chart-icon-group { display: flex; gap: 2px; margin-left: auto; }
+    .chart-icon-btn {
+      width: 28px; height: 28px; border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm); background: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; color: var(--label);
+    }
+    .chart-icon-btn.active { background: #e8f0fe; border-color: var(--info); }
+    .chart-icon-btn:hover { background: #f5f6f7; }
+    .chart-wrap { position: relative; width: 100%; height: 220px; margin-bottom: 6px; }
+    canvas#forecastChart { display: block; }
+    .chart-range-bar {
+      width: 100%; height: 28px; background: #f5f6f7; border: 1px solid var(--border);
+      border-radius: 4px; display: flex; align-items: center;
+      padding: 0 8px; gap: 6px; margin-bottom: 8px; font-size: 11px; color: var(--label);
+    }
+    .range-track { flex: 1; height: 4px; background: var(--border); border-radius: 2px; position: relative; }
+    .range-fill { position: absolute; left: 5%; width: 40%; height: 100%; background: var(--info); border-radius: 2px; }
+    .range-timeline {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: var(--label); padding: 0 0 10px 0;
+    }
+    .chart-legend {
+      display: flex; gap: 18px; align-items: center;
+      padding: 6px 0 14px 0; flex-wrap: wrap; font-size: 12px; color: var(--label);
+    }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-line { width: 20px; height: 2px; border-radius: 1px; }
+    .legend-line.solid { background: #8b5cf6; }
+    .legend-line.dashed { background: transparent; border-top: 2px dashed #8b5cf6; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .legend-bar { width: 12px; height: 12px; border-radius: 2px; }
+
+    /* ── Key Figures Table ───────────────────────────────────── */
+    .kf-card {
+      background: #fff;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius);
+      overflow-x: auto;
+    }
+    .kf-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    .kf-table thead tr { background: #f5f6f7; }
+    .kf-table th {
+      padding: 8px 12px; text-align: right;
+      font-size: 12px; font-weight: 700; color: var(--label);
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .kf-table th:first-child { text-align: left; min-width: 160px; }
+    .kf-table td {
+      padding: 7px 12px; text-align: right;
+      font-size: 13px; color: var(--title);
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .kf-table td:first-child {
+      text-align: left; color: var(--info);
+      text-decoration: underline; cursor: pointer;
+    }
+    .kf-table td:first-child:hover { color: var(--ai-blue); }
+    .kf-table tbody tr:hover td { background: #f9fafb; }
+    .kf-table .cell-alert { background: #fde8e8; color: var(--urgent); border-radius: 2px; font-weight: 700; }
+    .kf-table .cell-alert-dot::before { content: "● "; color: var(--urgent); }
+    .kf-table tfoot td {
+      font-size: 12px; color: var(--label);
+      border-top: 1px solid var(--border); padding: 8px 12px;
+    }
+
+    /* ── Modify Modal ────────────────────────────────────────── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.35); z-index: 1000;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff; border-radius: var(--radius);
+      box-shadow: 0 8px 40px rgba(0,0,0,.18);
+      width: 640px; max-width: 94vw;
+      display: flex; flex-direction: column;
+      max-height: 86vh; overflow: hidden;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .modal-title { font-size: 15px; font-weight: 700; color: var(--title); }
+    .modal-subtitle { font-size: 12px; color: var(--label); margin-top: 2px; }
+    .modal-close {
+      width: 28px; height: 28px; border: none; background: none;
+      cursor: pointer; color: var(--label); font-size: 18px; line-height: 1;
+      border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
+    }
+    .modal-close:hover { background: #f5f6f7; }
+    .modal-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+    .modal-field-label {
+      font-size: 12px; font-weight: 700; color: var(--label);
+      margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .modal-meta {
+      display: flex; gap: 20px; margin-bottom: 14px;
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+    .modal-meta-item { font-size: 12px; color: var(--label); }
+    .modal-meta-item strong { color: var(--title); }
+    .modal-textarea {
+      width: 100%; min-height: 260px;
+      border: 1px solid var(--border-mid); border-radius: var(--radius-sm);
+      padding: 12px; font-family: "72","72full",Arial,Helvetica,sans-serif;
+      font-size: 13px; color: var(--title); line-height: 1.6;
+      resize: vertical; outline: none; transition: border-color 0.15s;
+    }
+    .modal-textarea:focus { border-color: var(--info); box-shadow: 0 0 0 2px rgba(0,100,217,.1); }
+    .modal-hint { font-size: 11px; color: var(--label); margin-top: 6px; }
+    .modal-footer {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+    .btn-modal-send {
+      font-size: 13px; font-family: inherit; padding: 0 20px; height: 32px;
+      border-radius: var(--radius-sm); border: none;
+      background: var(--info); color: #fff; cursor: pointer;
+    }
+    .btn-modal-send:hover { background: #0057b8; }
+    .btn-modal-send:disabled { background: #a0bfdf; cursor: default; }
+    .btn-modal-cancel {
+      font-size: 13px; font-family: inherit; padding: 0 16px; height: 32px;
+      border-radius: var(--radius-sm); border: 1px solid var(--border-mid);
+      background: #fff; color: var(--title); cursor: pointer;
+    }
+    .btn-modal-cancel:hover { background: #f5f6f7; }
+    .modal-sent-msg {
+      display: none; font-size: 13px; color: #256f3a; font-weight: 600;
+      align-items: center; gap: 6px; margin-right: auto;
+    }
+    .modal-sent-msg.show { display: flex; }
+  </style>
+</head>
+<body data-page="forecast">
+
+<div id="bn-shell-root"></div>
+<div class="app-body">
+  <div id="bn-sidenav-root"></div>
+
+  <div class="main">
+
+    <!-- Object Page Header (white, sticky) -->
+    <div class="obj-header">
+
+      <!-- Back nav -->
+      <div class="breadcrumb">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="flex-shrink:0">
+          <path d="M9.73 3.17C9.41 2.91 8.94 2.95 8.68 3.27L5.18 7.52C4.95 7.8 4.95 8.2 5.18 8.47L8.68 12.73C8.94 13.05 9.41 13.09 9.73 12.83C10.05 12.57 10.09 12.09 9.83 11.77L6.72 8L9.83 4.22C10.09 3.91 10.05 3.43 9.73 3.17Z" fill="#0064d9"/>
+        </svg>
+        <a href="exception_detail.html?exc=1">Back</a>
+      </div>
+
+      <!-- Title row — title left, View Comments right -->
+      <div class="obj-title-row">
+        <div class="obj-title">Forecast</div>
+        <button class="btn-view-comments">View Comments</button>
+      </div>
+
+      <!-- AI card — 3 columns matching image -->
+      <div class="ai-rec-card" id="aiRecCard">
+        <div class="ai-rec-title-row">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g clip-path="url(#ai-fc-clip)">
+              <path d="M4.77386 5.51772C5.00416 4.82742 5.99565 4.82746 6.22601 5.51772C7.03711 7.8988 8.09862 8.9593 10.4819 9.76967C11.1728 10.0098 11.1728 11.0005 10.4819 11.2306C8.09867 12.041 7.0371 13.1015 6.22601 15.4826C5.99555 16.1726 5.00425 16.1726 4.77386 15.4826C3.96275 13.1015 2.90125 12.041 0.517998 11.2306C-0.172689 10.9904 -0.172643 9.99991 0.517998 9.76967C2.90124 8.9593 3.96275 7.89878 4.77386 5.51772ZM12.6049 0.284318C12.735 -0.0948015 13.2648 -0.0947441 13.395 0.284318C13.835 1.58216 14.4153 2.16146 15.7153 2.60072C16.095 2.7306 16.0951 3.26972 15.7153 3.39955C14.4153 3.83882 13.835 4.41812 13.395 5.71596C13.2647 6.09477 12.7351 6.09482 12.6049 5.71596C12.1649 4.41812 11.5846 3.83882 10.2846 3.39955C9.90511 3.2696 9.90515 2.73073 10.2846 2.60072C11.5846 2.16146 12.1649 1.58216 12.6049 0.284318Z" fill="#6431fa"/>
+            </g>
+            <defs><clipPath id="ai-fc-clip"><rect width="16" height="16" fill="white"/></clipPath></defs>
+          </svg>
+          Send Reason Request
+        </div>
+        <div class="ai-rec-body-row">
+          <div class="ai-col-impact">
+            <div class="ai-col-label">Business Impact</div>
+            <div class="ai-col-text">5,000 units at risk across W04–W06 2026 · Plant US01 (Chicago, IL). Current commit covers only 60% of forecast.</div>
+          </div>
+          <div class="ai-col-cause">
+            <div class="ai-col-label">Root Cause</div>
+            <div class="ai-col-text">Component shortage on Volterra US01 production line. Recovery expected by Week 8.</div>
+          </div>
+          <div class="ai-col-meta">
+            <div class="ai-meta-pair">
+              <div class="ai-meta-item">
+                <span class="ai-meta-item-label">Priority
+                  <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" stroke="#556b82" stroke-width="1.2"/><path d="M6 5v3M6 4v.5" stroke="#556b82" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </span>
+                <span class="ai-meta-item-val urgent">Urgent</span>
+              </div>
+              <div class="ai-meta-item">
+                <span class="ai-meta-item-label">Cost Impacted:
+                  <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" stroke="#556b82" stroke-width="1.2"/><path d="M6 5v3M6 4v.5" stroke="#556b82" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </span>
+                <span class="ai-meta-item-val cost">$1,255,930</span>
+              </div>
+            </div>
+            <div class="ai-rec-actions">
+              <button class="btn-accept" id="fcAcceptBtn" onclick="acceptRec()">Accept</button>
+              <button class="btn-modify" id="fcModifyBtn" onclick="openModifyModal()">Modify</button>
+              <button class="btn-dismiss" onclick="dismissRec()">Dismiss</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer info row — borderless, inline fields -->
+      <div class="cust-info-row">
+        <div class="cust-icon-box">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <rect x="2" y="7" width="20" height="14" rx="2" stroke="#556b82" stroke-width="1.4"/>
+            <path d="M7 7V5a5 5 0 0 1 10 0v2" stroke="#556b82" stroke-width="1.4"/>
+            <rect x="9" y="12" width="6" height="5" rx="1" stroke="#556b82" stroke-width="1.2"/>
+          </svg>
+        </div>
+        <div class="cust-name-col">
+          <p>Customer: <strong>Customer Inc.</strong></p>
+          <p>Phone Number: 589946637</p>
+        </div>
+        <div class="cust-divider"></div>
+        <div class="cust-fields">
+          <div class="c-field">
+            <span class="c-field-label">Customer Part Number</span>
+            <a class="c-field-link" href="#">IBP-NP1</a>
+          </div>
+          <div class="c-field">
+            <span class="c-field-label">Customer Location (Time Zone)</span>
+            <span class="c-field-val">2800: South East Plant</span>
+          </div>
+          <div class="c-field">
+            <span class="c-field-label">Stock on Hand</span>
+            <span class="c-field-val positive">600 PC</span>
+          </div>
+          <div class="c-field">
+            <span class="c-field-label">Status</span>
+            <span class="c-field-val">Active</span>
+          </div>
+          <div class="c-field">
+            <span class="c-field-label">Last Supplier Update</span>
+            <span class="c-field-val">Jun 08, 2024</span>
+          </div>
+          <div class="c-field">
+            <span class="c-field-label">Last Data Sent</span>
+            <span class="c-field-val">Jan 08, 2026</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab bar -->
+      <div class="tab-bar">
+        <button class="tab-item active" onclick="switchTab(this)">Overview</button>
+        <button class="tab-item" onclick="switchTab(this)">Part Details</button>
+      </div>
+
+    </div><!-- /obj-header -->
+
+    <!-- Object Page Content (scrollable) -->
+    <div class="obj-content">
+      <div class="chart-card">
+        <!-- Controls -->
+        <div class="chart-controls">
+          <span class="chart-title">10-Week Forecast Overview</span>
+          <div class="chart-ctrl-group">
+            <label>View by:</label>
+            <select class="chart-select"><option>Weekly</option><option>Monthly</option></select>
+          </div>
+          <div class="chart-ctrl-group">
+            <label>Jump to:</label>
+            <select class="chart-select" style="min-width:150px"><option>First Committable …</option></select>
+          </div>
+          <div class="chart-ctrl-group">
+            <label>Starting from:</label>
+            <input class="chart-date-input" type="text" value="05/03/2026"/>
+          </div>
+          <div style="display:flex;align-items:center;gap:3px;">
+            <button class="chart-nav-btn">‹</button>
+            <button class="chart-nav-btn">›</button>
+          </div>
+          <div class="chart-icon-group">
+            <button class="chart-icon-btn active" title="Bar chart">
+              <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><rect x="1" y="6" width="3" height="7" rx=".5" fill="#0064d9"/><rect x="5.5" y="3" width="3" height="10" rx=".5" fill="#0064d9"/><rect x="10" y="5" width="3" height="8" rx=".5" fill="#0064d9"/></svg>
+            </button>
+            <button class="chart-icon-btn" title="Line chart">
+              <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><path d="M1 11 4 6l3 3 3-5 3 2" stroke="#556b82" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="chart-icon-btn" title="Table view">
+              <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" rx="1" stroke="#556b82" stroke-width="1.2"/><path d="M1 4.5h12M1 8h12M5 4.5v8.5" stroke="#556b82" stroke-width="1.1"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Chart Canvas -->
+        <div class="chart-wrap">
+          <canvas id="forecastChart" width="1200" height="220" style="width:100%;height:220px;"></canvas>
+        </div>
+
+        <!-- Range bar -->
+        <div class="chart-range-bar">
+          <span>09/2024</span>
+          <div class="range-track"><div class="range-fill"></div></div>
+          <span>09/2025</span>
+        </div>
+        <div class="range-timeline">
+          <span>09/2024</span><span>10-Week</span><span>20-Week</span><span>30-Week</span><span>40-Week</span><span>09/2025</span>
+        </div>
+
+        <!-- Legend -->
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-line solid"></div><span>Current Forecast</span></div>
+          <div class="legend-item"><div class="legend-line dashed"></div><span>Previous Forecast</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#256f3a;"></div><span>Firmed Orders</span></div>
+          <div class="legend-item"><div class="legend-bar" style="background:#7c3aed;opacity:.7"></div><span>Forecast</span></div>
+          <div class="legend-item"><div class="legend-bar" style="background:#3b82f6;opacity:.85"></div><span>Commit</span></div>
+          <div class="legend-item"><div class="legend-bar" style="background:#dc2626;opacity:.85"></div><span>Commit Gap (Alert)</span></div>
+        </div>
+      </div>
+
+      <!-- Key Figures Table -->
+      <div class="kf-card">
+        <table class="kf-table">
+          <thead>
+            <tr>
+              <th>Key Figures</th>
+              <th><span style="display:flex;align-items:center;gap:3px;justify-content:flex-end;"><svg width="11" height="11" fill="none" viewBox="0 0 12 14"><rect x="1" y="3" width="10" height="10" rx="1" stroke="#556b82" stroke-width="1.2"/><path d="M1 6h10M4 1v4M8 1v4" stroke="#556b82" stroke-width="1.1" stroke-linecap="round"/></svg> 05/03</span></th>
+              <th>05/10</th>
+              <th>05/17</th>
+              <th style="color:var(--urgent)">05/24 ●</th>
+              <th>05/31</th>
+              <th>06/07</th>
+              <th>06/14</th>
+              <th>06/21</th>
+              <th>06/28</th>
+              <th>07/05</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Forecast</td>
+              <td>620</td><td>640</td><td>660</td><td class="cell-alert">680</td>
+              <td>700</td><td>600</td><td>580</td><td>610</td><td>630</td><td>600</td>
+            </tr>
+            <tr>
+              <td>Forecast Commit</td>
+              <td>590</td><td>620</td><td>640</td><td class="cell-alert cell-alert-dot">408</td>
+              <td>680</td><td>580</td><td>560</td><td>590</td><td>610</td><td>580</td>
+            </tr>
+            <tr>
+              <td>Forecast Deviation</td>
+              <td>30</td><td>20</td><td>20</td><td class="cell-alert">272</td>
+              <td>20</td><td>20</td><td>20</td><td>20</td><td>20</td><td>20</td>
+            </tr>
+            <tr>
+              <td>Firmed Orders</td>
+              <td>492</td><td>600</td><td>130</td><td>185</td>
+              <td>540</td><td>130</td><td>561</td><td>583</td><td>447</td><td>453</td>
+            </tr>
+            <tr>
+              <td>Previous Forecast</td>
+              <td>610</td><td>635</td><td>655</td><td>680</td>
+              <td>695</td><td>595</td><td>575</td><td>605</td><td>625</td><td>595</td>
+            </tr>
+            <tr>
+              <td>Cumulative Forecast</td>
+              <td>620</td><td>1260</td><td>1920</td><td>2600</td>
+              <td>3300</td><td>3900</td><td>4480</td><td>5090</td><td>5720</td><td>6320</td>
+            </tr>
+            <tr>
+              <td>Key Figure Supplier</td>
+              <td>453</td><td>556</td><td>738</td><td>423</td>
+              <td>177</td><td>740</td><td>738</td><td>994</td><td>492</td><td>447</td>
+            </tr>
+            <tr>
+              <td>Forecast Based on Sales</td>
+              <td>580</td><td>600</td><td>620</td><td>640</td>
+              <td>660</td><td>560</td><td>540</td><td>570</td><td>590</td><td>560</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="11"><span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:#fde8e8;border-radius:2px;display:inline-block;border:1px solid var(--urgent)"></span> Alert: Commit gap ≥ 200 units</span></td></tr>
+          </tfoot>
+        </table>
+      </div>
+
+    </div><!-- /obj-content -->
+  </div><!-- /main -->
+</div><!-- /app-body -->
+
+<!-- Modify Modal -->
+<div class="modal-overlay" id="modifyOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Modify Shortage Resolution Request</div>
+        <div class="modal-subtitle">Part VLT-XCOMP-680 · Volterra Components · Plant US01</div>
+      </div>
+      <button class="modal-close" onclick="closeModifyModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-meta">
+        <div class="modal-meta-item">To: <strong>Volterra Components — Account Team</strong></div>
+        <div class="modal-meta-item">Re: <strong>FA-2026-0324-001</strong></div>
+        <div class="modal-meta-item">Gap: <strong>272 units · Week 05/24</strong></div>
+      </div>
+      <div class="modal-field-label">Message</div>
+      <textarea class="modal-textarea" id="fcModifyTextarea">Subject: Urgent — Forecast Shortage Request · VLT-XCOMP-680 · Plant US01
+
+Dear Volterra Components Account Team,
+
+We are writing regarding forecast alert FA-2026-0324-001 for part VLT-XCOMP-680 committed to Plant US01 (Chicago).
+
+SHORTAGE SUMMARY
+──────────────────────────────────────
+  Part:        VLT-XCOMP-680
+  Week:        05/24/2026
+  Forecast:    680 units
+  Committed:   408 units
+  Gap:         272 units
+
+REQUESTED ACTION
+──────────────────────────────────────
+1. Confirm whether Volterra can supply the remaining 272 units by May 18, 2026.
+2. If capacity is constrained, provide the maximum available quantity and revised ship date.
+3. If full quantity cannot be met, confirm whether alternate SKU VLT-MC-4404 (560 units on hand) can be substituted for this order.
+
+BUSINESS IMPACT
+──────────────────────────────────────
+Failure to receive the full quantity by May 18 will cause a production line hold at Plant US01 affecting 3 downstream assemblies. This represents an estimated $1.26M cost impact.
+
+Please confirm receipt of this request and provide a response by May 10, 2026.
+
+Best regards,
+SAP Business Network — Supply Chain Exception Management</textarea>
+      <div class="modal-hint">✦ AI pre-drafted based on forecast data, commit gap, and supplier history. Edit as needed before sending.</div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-sent-msg" id="fcModifySentMsg">
+        <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" stroke="#256f3a" stroke-width="1.4"/><path d="M4.5 7l2 2 3-3" stroke="#256f3a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Request sent to Volterra
+      </div>
+      <button class="btn-modal-cancel" onclick="closeModifyModal()">Cancel</button>
+      <button class="btn-modal-send" id="fcModalSendBtn" onclick="sendModified()">Send Request</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── Tab Switch ─────────────────────────────── */
+  function switchTab(el) {
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  /* ── AI Rec Accept / Modify / Dismiss ───────── */
+  function acceptRec() {
+    var btn = document.getElementById('fcAcceptBtn');
+    btn.textContent = '✓ Accepted';
+    btn.style.background = '#256f3a'; btn.style.borderColor = '#256f3a'; btn.disabled = true;
+    document.getElementById('fcModifyBtn').disabled = true;
+  }
+  function dismissRec() {
+    document.getElementById('aiRecCard').style.display = 'none';
+  }
+  function openModifyModal() {
+    document.getElementById('modifyOverlay').classList.add('open');
+    document.getElementById('fcModifySentMsg').classList.remove('show');
+    var sendBtn = document.getElementById('fcModalSendBtn');
+    sendBtn.textContent = 'Send Request'; sendBtn.disabled = false;
+  }
+  function closeModifyModal() {
+    document.getElementById('modifyOverlay').classList.remove('open');
+  }
+  function sendModified() {
+    var sendBtn = document.getElementById('fcModalSendBtn');
+    sendBtn.textContent = 'Sending…'; sendBtn.disabled = true;
+    setTimeout(function() {
+      document.getElementById('fcModifySentMsg').classList.add('show');
+      setTimeout(function() { closeModifyModal(); acceptRec(); }, 900);
+    }, 900);
+  }
+
+  /* ── Draw Forecast Chart ────────────────────── */
+  (function drawChart() {
+    var canvas = document.getElementById('forecastChart');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var H = 220;
+    canvas.width = (canvas.offsetWidth || 1200) * (window.devicePixelRatio || 1);
+    canvas.height = H * (window.devicePixelRatio || 1);
+    ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+    var cW = canvas.offsetWidth || 1200;
+
+    var weeks    = ['05/03','05/10','05/17','05/24','05/31','06/07','06/14','06/21','06/28','07/05'];
+    var forecast = [620, 640, 660, 680, 700, 600, 580, 610, 630, 600];
+    var commit   = [590, 620, 640, 408, 680, 580, 560, 590, 610, 580];
+    var curFcast = [615, 635, 655, 670, 695, 595, 575, 605, 625, 595];
+    var prevFcast= [610, 630, 650, 665, 690, 590, 570, 600, 620, 590];
+
+    var padL = 52, padR = 10, padT = 14, padB = 28;
+    var chartW = cW - padL - padR;
+    var chartH = H - padT - padB;
+    var maxVal = 800;
+    var n = weeks.length;
+    var barW = Math.floor(chartW / n * 0.32);
+    var groupW = chartW / n;
+
+    /* Grid */
+    ctx.strokeStyle = '#e5e5e5'; ctx.lineWidth = 1;
+    [0, 200, 400, 600, 800].forEach(function(v) {
+      var y = padT + chartH - (v / maxVal) * chartH;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + chartW, y); ctx.stroke();
+      ctx.fillStyle = '#8fa3b4'; ctx.font = '10px Arial'; ctx.textAlign = 'right';
+      ctx.fillText(v === 0 ? '0' : (v/1000).toFixed(1)+'K', padL - 4, y + 4);
+    });
+
+    /* Bars */
+    weeks.forEach(function(w, i) {
+      var cx = padL + i * groupW + groupW / 2;
+      /* Forecast bar (purple) */
+      var fH = (forecast[i] / maxVal) * chartH;
+      ctx.fillStyle = 'rgba(124,58,237,0.7)';
+      ctx.fillRect(cx - barW - 2, padT + chartH - fH, barW, fH);
+      /* Commit bar — red on alert week (index 3) */
+      var cH = (commit[i] / maxVal) * chartH;
+      ctx.fillStyle = i === 3 ? '#dc2626' : 'rgba(59,130,246,0.85)';
+      ctx.fillRect(cx + 2, padT + chartH - cH, barW, cH);
+      /* X labels */
+      ctx.fillStyle = '#8fa3b4'; ctx.font = '10px Arial'; ctx.textAlign = 'center';
+      ctx.fillText(w+'/26', cx, H - padB + 12);
+    });
+
+    /* Current Forecast line */
+    ctx.beginPath(); ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2; ctx.setLineDash([]);
+    curFcast.forEach(function(v, i) {
+      var x = padL + i * groupW + groupW / 2;
+      var y = padT + chartH - (v / maxVal) * chartH;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    /* Previous Forecast line (dashed) */
+    ctx.beginPath(); ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+    prevFcast.forEach(function(v, i) {
+      var x = padL + i * groupW + groupW / 2;
+      var y = padT + chartH - (v / maxVal) * chartH;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+  })();
+</script>
+
+<script src="shell.js"></script>
+</body>
+</html>

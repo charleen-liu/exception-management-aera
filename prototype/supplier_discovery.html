@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Supplier Discovery — SAP Business Network × Aera</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --white:      #ffffff;
+      --page-bg:    #f5f6f7;
+      --title:      #1d2d3e;
+      --label:      #556b82;
+      --border:     #e5e5e5;
+      --border-mid: #d9d9d9;
+      --urgent:     #bb0000;
+      --high:       #e76500;
+      --info:       #0064d9;
+      --positive:   #256f3a;
+      --pos-bg:     #f0faf0;
+      --aera:       #6b3fa0;
+      --aera-bg:    #f4effa;
+      --aera-bd:    #d4b8f0;
+      --radius-sm:  4px;
+      --radius:     8px;
+    }
+
+    body {
+      font-family: "72","72full",Arial,Helvetica,sans-serif;
+      font-size: 14px;
+      background: var(--page-bg);
+      color: var(--title);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .app-body { display:flex; flex:1; min-height:0; }
+    .main { flex:1; display:flex; flex-direction:column; min-height:0; min-width:0; overflow:hidden; }
+
+    /* ── Page Header ─────────────────────────────────────────── */
+    .page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border-mid);
+      padding: 14px 24px 0;
+      flex-shrink: 0;
+    }
+
+    .breadcrumb {
+      display:flex; align-items:center; gap:6px;
+      font-size:13px; color:var(--info); margin-bottom:8px;
+    }
+    .breadcrumb a { color:var(--info); text-decoration:none; cursor:pointer; }
+    .breadcrumb a:hover { text-decoration:underline; }
+    .breadcrumb-sep { color:var(--label); }
+
+    .header-row {
+      display:flex; align-items:flex-start; justify-content:space-between;
+      margin-bottom:14px; gap:16px;
+    }
+    .page-title {
+      font-family:"72Black","72Blackfull","72","72full",Arial,sans-serif;
+      font-size:1.375rem; color:#131e29; line-height:1.25;
+    }
+    .page-subtitle { font-size:13px; color:var(--label); margin-top:3px; }
+
+    .aera-powered {
+      display:flex; align-items:center; gap:8px; flex-shrink:0;
+      background:var(--aera-bg); border:1px solid var(--aera-bd);
+      border-radius:var(--radius); padding:8px 14px;
+    }
+    .aera-powered-text { font-size:12px; font-weight:700; color:var(--aera); }
+    .aera-powered-sub  { font-size:11px; color:var(--label); }
+
+    /* ── Content ─────────────────────────────────────────────── */
+    .content-scroll {
+      flex:1; overflow-y:auto;
+      padding:20px 24px 40px;
+      display:flex; flex-direction:column; gap:20px;
+    }
+
+    /* ── Cards ───────────────────────────────────────────────── */
+    .card {
+      background:var(--white);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:20px;
+    }
+    .card-title { font-size:14px; font-weight:700; color:var(--title); margin-bottom:4px; }
+    .card-subtitle { font-size:12px; color:var(--label); margin-bottom:16px; }
+
+    /* ── Supplier comparison table ───────────────────────────── */
+    .sup-table { width:100%; border-collapse:collapse; margin-top:4px; }
+    .sup-table th {
+      text-align:left; font-size:12px; font-weight:700; color:var(--label);
+      padding:8px 12px; border-bottom:2px solid var(--border-mid);
+      white-space:nowrap;
+    }
+    .sup-table td {
+      padding:14px 12px; font-size:13px; vertical-align:top;
+      border-bottom:1px solid var(--border);
+    }
+    .sup-table tbody tr { cursor:pointer; transition:background .1s; }
+    .sup-table tbody tr:hover { background:#f9f9fb; }
+    .sup-table tbody tr.selected { background:var(--aera-bg); border-left:3px solid var(--aera); }
+    .sup-table tbody tr.selected td:first-child { padding-left:9px; }
+
+    .sup-name { font-weight:700; color:var(--title); }
+    .sup-location { font-size:11px; color:var(--label); margin-top:2px; }
+
+    .score-pill {
+      display:inline-flex; align-items:center; gap:5px;
+      font-size:13px; font-weight:700;
+      padding:3px 10px; border-radius:10px;
+    }
+    .score-high   { background:#d9f0d3; color:#256f3a; }
+    .score-med    { background:#fff0d6; color:#e76500; }
+
+    .savings-val { font-weight:700; color:var(--positive); font-size:14px; }
+    .savings-range { font-size:11px; color:var(--label); }
+
+    .risk-bar-wrap { width:80px; }
+    .risk-bar-outer { height:6px; background:#f0f2f4; border-radius:3px; overflow:hidden; }
+    .risk-bar-inner { height:100%; border-radius:3px; }
+
+    .tag {
+      display:inline-block; font-size:10px; font-weight:700;
+      padding:2px 7px; border-radius:10px; margin:1px 2px 1px 0;
+    }
+    .tag-aera    { background:var(--aera-bg); color:var(--aera); border:1px solid var(--aera-bd); }
+    .tag-info    { background:#edf6ff; color:var(--info); }
+    .tag-pos     { background:#d9f0d3; color:var(--positive); }
+
+    .select-btn {
+      font-family:"72","72full",Arial,sans-serif;
+      font-size:12px; font-weight:700;
+      padding:5px 14px; border-radius:var(--radius-sm);
+      cursor:pointer; border:1px solid var(--aera);
+      color:var(--aera); background:var(--white);
+      white-space:nowrap;
+    }
+    .select-btn:hover { background:var(--aera-bg); }
+    .select-btn.selected-state { background:var(--aera); color:#fff; border-color:var(--aera); }
+
+    /* ── Scenario modeling card ──────────────────────────────── */
+    .scenario-grid {
+      display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;
+      margin-top:4px;
+    }
+    .scenario-card {
+      border:1px solid var(--border); border-radius:var(--radius);
+      padding:16px; position:relative;
+    }
+    .scenario-card.recommended {
+      border-color:var(--aera-bd);
+      background:var(--aera-bg);
+    }
+    .scenario-rec-badge {
+      position:absolute; top:-10px; left:50%; transform:translateX(-50%);
+      background:var(--aera); color:#fff;
+      font-size:10px; font-weight:700;
+      padding:2px 10px; border-radius:10px;
+      white-space:nowrap;
+    }
+    .scenario-title { font-size:13px; font-weight:700; color:var(--title); margin-bottom:10px; }
+    .scenario-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:12px; }
+    .scenario-label { color:var(--label); }
+    .scenario-value { font-weight:700; color:var(--title); }
+    .scenario-value.green { color:var(--positive); }
+    .scenario-value.red   { color:var(--urgent); }
+
+    /* ── Buttons ─────────────────────────────────────────────── */
+    .btn {
+      font-family:"72","72full",Arial,sans-serif;
+      font-size:14px; font-weight:700;
+      padding:8px 24px; border-radius:var(--radius-sm);
+      cursor:pointer; border:none; line-height:1.4;
+    }
+    .btn-aera  { background:var(--aera); color:#fff; }
+    .btn-aera:hover  { background:#5a3385; }
+    .btn-ghost {
+      background:transparent; color:var(--title);
+      border:1px solid var(--border-mid);
+    }
+    .btn-ghost:hover { background:#f5f5f5; }
+
+    /* ── Summary bar ─────────────────────────────────────────── */
+    .summary-bar {
+      display:flex; align-items:center; justify-content:space-between;
+      background:var(--white); border:1px solid var(--aera-bd);
+      border-radius:var(--radius); padding:14px 20px;
+      gap:16px;
+    }
+    .summary-bar-facts { display:flex; gap:28px; flex-wrap:wrap; }
+    .summary-fact { display:flex; flex-direction:column; gap:2px; }
+    .summary-fact-label { font-size:11px; color:var(--label); text-transform:uppercase; letter-spacing:.4px; }
+    .summary-fact-value { font-size:14px; font-weight:700; color:var(--title); }
+    .summary-fact-value.green { color:var(--positive); }
+    .summary-fact-value.aera  { color:var(--aera); }
+  </style>
+</head>
+<body data-page="scexceptions">
+
+<div id="bn-shell-root"></div>
+
+<div class="app-body">
+  <div id="bn-sidenav-root"></div>
+
+  <main class="main">
+
+    <div class="page-header">
+      <div class="breadcrumb">
+        <a href="exception_inbox.html">Exception Inbox</a>
+        <span class="breadcrumb-sep">›</span>
+        <a href="supplier_reliability.html">Supplier Reliability</a>
+        <span class="breadcrumb-sep">›</span>
+        <a href="sourcing_intelligence.html">Sourcing Intelligence</a>
+        <span class="breadcrumb-sep">›</span>
+        <span style="color:var(--label);">Supplier Discovery</span>
+      </div>
+      <div class="header-row">
+        <div>
+          <div class="page-title">Supplier Discovery</div>
+          <div class="page-subtitle">Best-fit alternative GPU suppliers for APAC region · Direct Award recommended · Replacing Robotech &amp; Volterra</div>
+        </div>
+        <div class="aera-powered">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <circle cx="11" cy="11" r="10.5" fill="#6b3fa0" fill-opacity=".12" stroke="#6b3fa0" stroke-opacity=".5"/>
+            <path d="M11 5.5v11M7.5 9l3.5-3.5L14.5 9" stroke="#6b3fa0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div>
+            <div class="aera-powered-text">Powered by Aera</div>
+            <div class="aera-powered-sub">Supplier Discovery Engine</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-scroll">
+
+      <!-- Context summary -->
+      <div class="summary-bar">
+        <div class="summary-bar-facts">
+          <div class="summary-fact">
+            <span class="summary-fact-label">Commodity</span>
+            <span class="summary-fact-value">Electronics – GPU</span>
+          </div>
+          <div class="summary-fact">
+            <span class="summary-fact-label">Region</span>
+            <span class="summary-fact-value">APAC</span>
+          </div>
+          <div class="summary-fact">
+            <span class="summary-fact-label">Replacing</span>
+            <span class="summary-fact-value">Robotech + Volterra</span>
+          </div>
+          <div class="summary-fact">
+            <span class="summary-fact-label">Spend at risk</span>
+            <span class="summary-fact-value" style="color:var(--urgent);">$31.2M</span>
+          </div>
+          <div class="summary-fact">
+            <span class="summary-fact-label">Candidates found</span>
+            <span class="summary-fact-value aera">3 Best-Fit</span>
+          </div>
+          <div class="summary-fact">
+            <span class="summary-fact-label">Potential savings</span>
+            <span class="summary-fact-value green">$1.8M – $2.4M</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Supplier comparison table -->
+      <div class="card">
+        <div class="card-title">Best-Fit Alternative Suppliers</div>
+        <div class="card-subtitle">Ranked by Aera match score · Based on network performance, capacity fit, lead time, and spend savings potential</div>
+
+        <table class="sup-table">
+          <thead>
+            <tr>
+              <th style="width:22%">Supplier</th>
+              <th style="width:10%">Aera Match</th>
+              <th style="width:10%">Network SRI</th>
+              <th style="width:13%">Potential Savings</th>
+              <th style="width:10%">Lead Time</th>
+              <th style="width:10%">Supply Risk</th>
+              <th style="width:18%">Capabilities</th>
+              <th style="width:7%"></th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- Row 1 — top match -->
+            <tr class="selected" id="row-1" onclick="selectRow(1)">
+              <td>
+                <div class="sup-name">NovaTech Semiconductors</div>
+                <div class="sup-location">Taiwan · GPU &amp; AI Chips</div>
+                <div style="margin-top:4px;"><span class="tag tag-aera">Aera Top Pick</span></div>
+              </td>
+              <td>
+                <span class="score-pill score-high">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 6l2.5 2.5L8 3" stroke="#256f3a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  97%
+                </span>
+              </td>
+              <td>
+                <span class="score-pill score-high">94</span>
+              </td>
+              <td>
+                <div class="savings-val">$2.1M – $2.4M</div>
+                <div class="savings-range">Est. annual savings</div>
+              </td>
+              <td>
+                <div style="font-weight:700;">14 days</div>
+                <div style="font-size:11px;color:var(--label);">APAC warehouse</div>
+              </td>
+              <td>
+                <div class="risk-bar-wrap">
+                  <div style="font-size:11px;color:var(--positive);font-weight:700;margin-bottom:3px;">Low</div>
+                  <div class="risk-bar-outer"><div class="risk-bar-inner" style="width:18%;background:var(--positive);"></div></div>
+                </div>
+              </td>
+              <td>
+                <span class="tag tag-pos">RTX-class GPUs</span>
+                <span class="tag tag-info">HBM3</span>
+                <span class="tag tag-aera">Direct Award</span>
+              </td>
+              <td>
+                <button class="select-btn selected-state" id="btn-1" onclick="event.stopPropagation();selectRow(1)">✓ Selected</button>
+              </td>
+            </tr>
+
+            <!-- Row 2 -->
+            <tr id="row-2" onclick="selectRow(2)">
+              <td>
+                <div class="sup-name">Apex Micro Systems</div>
+                <div class="sup-location">South Korea · GPU Components</div>
+              </td>
+              <td>
+                <span class="score-pill score-high">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 6l2.5 2.5L8 3" stroke="#256f3a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  91%
+                </span>
+              </td>
+              <td>
+                <span class="score-pill score-high">91</span>
+              </td>
+              <td>
+                <div class="savings-val">$1.6M – $1.9M</div>
+                <div class="savings-range">Est. annual savings</div>
+              </td>
+              <td>
+                <div style="font-weight:700;">18 days</div>
+                <div style="font-size:11px;color:var(--label);">Seoul hub</div>
+              </td>
+              <td>
+                <div class="risk-bar-wrap">
+                  <div style="font-size:11px;color:var(--positive);font-weight:700;margin-bottom:3px;">Low</div>
+                  <div class="risk-bar-outer"><div class="risk-bar-inner" style="width:22%;background:var(--positive);"></div></div>
+                </div>
+              </td>
+              <td>
+                <span class="tag tag-pos">A100-class GPUs</span>
+                <span class="tag tag-info">GDDR6</span>
+              </td>
+              <td>
+                <button class="select-btn" id="btn-2" onclick="event.stopPropagation();selectRow(2)">Select</button>
+              </td>
+            </tr>
+
+            <!-- Row 3 -->
+            <tr id="row-3" onclick="selectRow(3)">
+              <td>
+                <div class="sup-name">SinoChip Advanced</div>
+                <div class="sup-location">Singapore · GPU &amp; Power ICs</div>
+              </td>
+              <td>
+                <span class="score-pill score-med">
+                  84%
+                </span>
+              </td>
+              <td>
+                <span class="score-pill score-high">88</span>
+              </td>
+              <td>
+                <div class="savings-val">$1.2M – $1.5M</div>
+                <div class="savings-range">Est. annual savings</div>
+              </td>
+              <td>
+                <div style="font-weight:700;">22 days</div>
+                <div style="font-size:11px;color:var(--label);">Singapore hub</div>
+              </td>
+              <td>
+                <div class="risk-bar-wrap">
+                  <div style="font-size:11px;color:var(--high);font-weight:700;margin-bottom:3px;">Medium</div>
+                  <div class="risk-bar-outer"><div class="risk-bar-inner" style="width:44%;background:var(--high);"></div></div>
+                </div>
+              </td>
+              <td>
+                <span class="tag tag-pos">RTX-class GPUs</span>
+                <span class="tag tag-info">Power ICs</span>
+              </td>
+              <td>
+                <button class="select-btn" id="btn-3" onclick="event.stopPropagation();selectRow(3)">Select</button>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Scenario modeling -->
+      <div class="card">
+        <div class="card-title">Scenario Modeling — NovaTech Semiconductors</div>
+        <div class="card-subtitle">Aera-generated financial scenarios · Based on current contract terms, network pricing, and volume commitments</div>
+
+        <div class="scenario-grid">
+
+          <div class="scenario-card recommended">
+            <div class="scenario-rec-badge">Aera Recommended</div>
+            <div class="scenario-title">Direct Award — Full Volume Transfer</div>
+            <div class="scenario-row"><span class="scenario-label">Annual savings</span><span class="scenario-value green">$2.4M</span></div>
+            <div class="scenario-row"><span class="scenario-label">Time to first delivery</span><span class="scenario-value">14 days</span></div>
+            <div class="scenario-row"><span class="scenario-label">Volume commitment</span><span class="scenario-value">100% of GPU spend</span></div>
+            <div class="scenario-row"><span class="scenario-label">RFX required</span><span class="scenario-value green">No — Direct Award</span></div>
+            <div class="scenario-row"><span class="scenario-label">Risk level</span><span class="scenario-value green">Low</span></div>
+            <div style="margin-top:10px;padding:8px;background:rgba(107,63,160,.08);border-radius:4px;font-size:11px;color:var(--aera);line-height:1.5;">
+              Skips RFX cycle entirely. NovaTech is pre-qualified on the network with 97% match score. Fastest path to supply continuity.
+            </div>
+          </div>
+
+          <div class="scenario-card">
+            <div class="scenario-title">Split Award — 70/30 with Apex Micro</div>
+            <div class="scenario-row"><span class="scenario-label">Annual savings</span><span class="scenario-value green">$1.8M</span></div>
+            <div class="scenario-row"><span class="scenario-label">Time to first delivery</span><span class="scenario-value">18 days</span></div>
+            <div class="scenario-row"><span class="scenario-label">Volume commitment</span><span class="scenario-value">70% / 30% split</span></div>
+            <div class="scenario-row"><span class="scenario-label">RFX required</span><span class="scenario-value">Simplified RFQ</span></div>
+            <div class="scenario-row"><span class="scenario-label">Risk level</span><span class="scenario-value green">Low</span></div>
+            <div style="margin-top:10px;padding:8px;background:#f5f6f7;border-radius:4px;font-size:11px;color:var(--label);line-height:1.5;">
+              Reduces concentration risk by diversifying across two pre-qualified suppliers.
+            </div>
+          </div>
+
+          <div class="scenario-card">
+            <div class="scenario-title">Phased Transition — 90-day ramp</div>
+            <div class="scenario-row"><span class="scenario-label">Annual savings</span><span class="scenario-value green">$1.4M</span></div>
+            <div class="scenario-row"><span class="scenario-label">Time to first delivery</span><span class="scenario-value">28 days</span></div>
+            <div class="scenario-row"><span class="scenario-label">Volume commitment</span><span class="scenario-value">Ramp 0→100%</span></div>
+            <div class="scenario-row"><span class="scenario-label">RFX required</span><span class="scenario-value">Full RFQ process</span></div>
+            <div class="scenario-row"><span class="scenario-label">Risk level</span><span class="scenario-value" style="color:var(--high);">Medium</span></div>
+            <div style="margin-top:10px;padding:8px;background:#f5f6f7;border-radius:4px;font-size:11px;color:var(--label);line-height:1.5;">
+              Maintains Robotech/Volterra relationship during transition. Slower but lower disruption.
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div style="display:flex;justify-content:flex-end;gap:10px;align-items:center;">
+        <span style="font-size:13px;color:var(--label);">NovaTech Semiconductors selected · Direct Award · $2.4M potential savings</span>
+        <button class="btn btn-ghost">Change Selection</button>
+        <button class="btn btn-aera" onclick="window.location='contract_negotiation.html'">
+          Proceed to Contract Negotiation →
+        </button>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  function selectRow(n) {
+    [1,2,3].forEach(function(i) {
+      var row = document.getElementById('row-'+i);
+      var btn = document.getElementById('btn-'+i);
+      if (i === n) {
+        row.classList.add('selected');
+        btn.textContent = '✓ Selected';
+        btn.classList.add('selected-state');
+      } else {
+        row.classList.remove('selected');
+        btn.textContent = 'Select';
+        btn.classList.remove('selected-state');
+      }
+    });
+  }
+</script>
+
+<script src="shell.js"></script>
+</body>
+</html>

@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exception Inbox — SAP Business Network</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:      #0070f2;
+      --white:      #ffffff;
+      --page-bg:    #f5f6f7;
+      --title:      #1d2d3e;
+      --label:      #556b82;
+      --border:     #e5e5e5;
+      --border-mid: #d9d9d9;
+      --urgent:     #bb0000;
+      --high:       #e76500;
+      --info:       #0064d9;
+      --positive:   #256f3a;
+      --aera:       #6b3fa0;
+      --aera-bg:    #f4effa;
+      --aera-bd:    #d4b8f0;
+      --radius-sm:  4px;
+      --radius:     8px;
+    }
+
+    body {
+      font-family: "72", "72full", Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      background: var(--white);
+      color: var(--title);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .app-body {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ── Main ─────────────────────────────────────────────────── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    /* ── Page Header ─────────────────────────────────────────── */
+    .page-header {
+      padding: 20px 32px 0;
+      flex-shrink: 0;
+      background: var(--white);
+    }
+
+    .back-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--info);
+      font-size: 14px;
+      cursor: pointer;
+      margin-bottom: 12px;
+      text-decoration: none;
+      width: fit-content;
+    }
+    .back-nav:hover { text-decoration: underline; }
+
+    .page-title {
+      font-family: "72Black", "72Blackfull", "72", "72full", Arial, sans-serif;
+      font-size: 1.75rem;
+      color: var(--title);
+      line-height: 1.2;
+    }
+
+    /* ── Page Header actions row ─────────────────────────────── */
+    .page-header-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .page-header-left {}
+    .page-title {
+      font-family: "72Black", "72Blackfull", "72", "72full", Arial, sans-serif;
+      font-size: 1.75rem;
+      color: var(--title);
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+    .page-timestamp {
+      font-size: 12px;
+      color: var(--label);
+    }
+    .page-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 2px;
+    }
+    .btn-configure {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 14px;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      background: var(--white);
+      font-family: "72", "72full", Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      color: var(--title);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .btn-configure:hover { background: #f0f4ff; border-color: var(--info); }
+    .btn-refresh {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 14px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--info);
+      font-family: "72", "72full", Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      color: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.1s;
+    }
+    .btn-refresh:hover { background: #0057b8; }
+
+    /* ── Tabs ─────────────────────────────────────────────────── */
+    .tab-bar {
+      display: flex;
+      gap: 32px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding-bottom: 10px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+
+    .tab.active {
+      border-bottom-color: var(--info);
+    }
+
+    .tab-count {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--title);
+      line-height: 1;
+      margin-bottom: 3px;
+    }
+
+    .tab-label {
+      font-size: 14px;
+      color: var(--label);
+      line-height: 1;
+    }
+
+    .tab.active .tab-label {
+      color: var(--info);
+      font-weight: 700;
+    }
+
+    /* ── Toolbar ─────────────────────────────────────────────── */
+    .table-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 32px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      background: var(--white);
+    }
+
+    .toolbar-count {
+      font-size: 13px;
+      color: var(--label);
+      margin-right: 4px;
+      white-space: nowrap;
+    }
+
+    .toolbar-spacer { flex: 1; }
+
+    /* Adapt Filters icon button */
+    .toolbar-adapt {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      background: var(--white);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .toolbar-adapt:hover { background: #f0f4ff; border-color: var(--info); }
+
+    /* Dropdown selects */
+    .toolbar-select {
+      height: 32px;
+      padding: 0 28px 0 10px;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      background: var(--white);
+      font-family: "72", "72full", Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      color: var(--title);
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23556b82' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      transition: border-color 0.15s;
+      min-width: 130px;
+    }
+    .toolbar-select:focus {
+      outline: none;
+      border-color: var(--info);
+      box-shadow: 0 0 0 2px rgba(0,100,217,0.12);
+    }
+    .toolbar-select:hover { border-color: #8c9bad; }
+
+    /* Search field */
+    .toolbar-search {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      padding: 5px 10px;
+      background: var(--white);
+      height: 32px;
+      width: 200px;
+      transition: border-color 0.15s;
+    }
+    .toolbar-search:focus-within { border-color: var(--info); box-shadow: 0 0 0 2px rgba(0,100,217,0.12); }
+    .toolbar-search svg { flex-shrink: 0; }
+    .toolbar-search input {
+      border: none;
+      outline: none;
+      font-size: 13px;
+      color: var(--title);
+      background: transparent;
+      width: 100%;
+      font-family: "72", "72full", Arial, Helvetica, sans-serif;
+    }
+    .toolbar-search input::placeholder { color: #a9b4be; }
+
+    /* Icon buttons */
+    .toolbar-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      background: var(--white);
+      cursor: pointer;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .toolbar-btn:hover { background: #f0f4ff; border-color: var(--info); }
+    .toolbar-btn.active { background: #e8f0fe; border-color: var(--info); }
+
+    /* ── Table ───────────────────────────────────────────────── */
+    .table-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 32px 32px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0;
+    }
+
+    thead tr {
+      border-bottom: 1px solid var(--border-mid);
+    }
+
+    thead th {
+      text-align: left;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--title);
+      padding: 12px 12px 10px;
+      white-space: nowrap;
+    }
+
+    thead th:first-child { padding-left: 16px; }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.1s;
+      position: relative;
+    }
+
+    tbody tr:hover { background: #f7f8fa; }
+
+    /* Left accent bar */
+    tbody tr td:first-child {
+      border-left: 3px solid transparent;
+      padding-left: 13px;
+    }
+
+    tbody tr.priority-high td:first-child  { border-left-color: #bb0000; }
+    tbody tr.priority-med  td:first-child  { border-left-color: #e76500; }
+    tbody tr.priority-low  td:first-child  { border-left-color: #6a6d70; }
+    tbody tr.priority-aera td:first-child  { border-left-color: var(--aera); }
+
+    tbody td {
+      padding: 14px 12px;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    .col-title {
+      font-weight: 700;
+      color: var(--title);
+      max-width: 360px;
+      line-height: 1.4;
+    }
+
+    .col-desc {
+      color: var(--label);
+      max-width: 340px;
+      line-height: 1.4;
+    }
+
+    /* Priority badges */
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .badge-high    { background: #ffd0d0; color: #bb0000; }
+    .badge-med     { background: #fff0d6; color: #e76500; }
+    .badge-low     { background: #e8e8e8; color: #6a6d70; }
+    .badge-aera    { background: var(--aera-bg); color: var(--aera); }
+    .badge-waiting { background: #e8f0fe; color: #0064d9; }
+    .badge-done    { background: #d9f4e3; color: #256f3a; }
+
+    .col-confidence { color: var(--title); font-size: 13px; }
+
+    .col-saving {
+      font-weight: 700;
+      color: var(--positive);
+      white-space: nowrap;
+    }
+
+    .col-date {
+      color: var(--label);
+      white-space: nowrap;
+    }
+
+    .col-chevron {
+      color: var(--info);
+      font-size: 16px;
+      text-align: right;
+      padding-right: 8px;
+      white-space: nowrap;
+    }
+
+    /* Aera tag on row */
+    .aera-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--aera);
+      background: var(--aera-bg);
+      border: 1px solid var(--aera-bd);
+      border-radius: 10px;
+      padding: 1px 7px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body data-page="scexceptions">
+
+<div id="bn-shell-root"></div>
+
+<div class="app-body">
+  <div id="bn-sidenav-root"></div>
+
+  <main class="main">
+
+    <div class="page-header">
+      <a class="back-nav" href="SBN_home.html">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M9.73 3.17C9.41 2.91 8.94 2.95 8.68 3.27L5.18 7.52C4.95 7.8 4.95 8.2 5.18 8.47L8.68 12.73C8.94 13.05 9.41 13.09 9.73 12.83C10.05 12.57 10.09 12.09 9.83 11.77L6.72 8L9.83 4.22C10.09 3.91 10.05 3.43 9.73 3.17Z" fill="#0064d9"/>
+        </svg>
+        Back
+      </a>
+
+      <div class="page-header-row">
+        <div class="page-header-left">
+          <h1 class="page-title">Exception Inbox</h1>
+          <div class="page-timestamp" id="page-timestamp">Last updated just now</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn-configure">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm0-1.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z" fill="#556b82"/>
+              <path d="M13.47 8.88a5.54 5.54 0 0 0 .05-.88c0-.3-.02-.59-.05-.88l1.9-1.48a.45.45 0 0 0 .11-.58l-1.8-3.12a.45.45 0 0 0-.55-.2l-2.24.9a6.6 6.6 0 0 0-1.52-.88L9.07.44A.45.45 0 0 0 8.63.04H5.37a.45.45 0 0 0-.44.38L4.63 2.7a6.6 6.6 0 0 0-1.52.88l-2.24-.9a.45.45 0 0 0-.55.2L.52 5.94a.44.44 0 0 0 .11.58l1.9 1.48A5.62 5.62 0 0 0 2.48 9c0 .29.02.58.05.88L.63 11.36a.45.45 0 0 0-.11.58l1.8 3.12c.11.2.35.28.55.2l2.24-.9c.47.34.98.62 1.52.88l.3 2.28c.05.22.24.38.44.38h3.26c.22 0 .4-.16.44-.38l.3-2.28a6.6 6.6 0 0 0 1.52-.88l2.24.9c.2.08.44 0 .55-.2l1.8-3.12a.44.44 0 0 0-.11-.58l-1.9-1.48zM12 8c0 .2-.01.4-.04.6l-.1.76.6.47 1.18.92-.72 1.24-1.4-.56-.7-.28-.6.44c-.37.27-.77.48-1.2.62l-.72.23-.12.74-.2 1.46H7.1l-.2-1.46-.12-.74-.72-.23a4.86 4.86 0 0 1-1.2-.62l-.6-.44-.7.28-1.4.56-.72-1.24 1.18-.92.6-.47-.1-.76A4.55 4.55 0 0 1 4 8c0-.2.01-.4.04-.6l.1-.76-.6-.47-1.18-.92.72-1.24 1.4.56.7.28.6-.44c.37-.27.77-.48 1.2-.62l.72-.23.12-.74.2-1.46h1.44l.2 1.46.12.74.72.23c.43.14.83.35 1.2.62l.6.44.7-.28 1.4-.56.72 1.24-1.18.92-.6.47.1.76c.03.2.04.4.04.6z" fill="#556b82"/>
+            </svg>
+            Configure Rules
+          </button>
+          <button class="btn-refresh" onclick="doRefresh(this)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M13.5 8A5.5 5.5 0 1 1 8 2.5c1.8 0 3.4.87 4.4 2.2" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M12 2v3h-3" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab active">
+          <span class="tab-count">9</span>
+          <span class="tab-label">Pending</span>
+        </div>
+        <div class="tab">
+          <span class="tab-count">2</span>
+          <span class="tab-label">Waiting</span>
+        </div>
+        <div class="tab">
+          <span class="tab-count">12</span>
+          <span class="tab-label">Complete</span>
+        </div>
+        <div class="tab">
+          <span class="tab-count">23</span>
+          <span class="tab-label">All</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="table-toolbar">
+
+      <!-- Adapt Filters icon -->
+      <button class="toolbar-adapt" title="Adapt Filters">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="4" cy="8" r="1.5" stroke="#556b82" stroke-width="1.3"/>
+          <circle cx="12" cy="4" r="1.5" stroke="#556b82" stroke-width="1.3"/>
+          <circle cx="12" cy="12" r="1.5" stroke="#556b82" stroke-width="1.3"/>
+          <line x1="1.5" y1="8" x2="2.5" y2="8" stroke="#556b82" stroke-width="1.3" stroke-linecap="round"/>
+          <line x1="5.5" y1="8" x2="14.5" y2="8" stroke="#556b82" stroke-width="1.3" stroke-linecap="round"/>
+          <line x1="1.5" y1="4" x2="10.5" y2="4" stroke="#556b82" stroke-width="1.3" stroke-linecap="round"/>
+          <line x1="13.5" y1="4" x2="14.5" y2="4" stroke="#556b82" stroke-width="1.3" stroke-linecap="round"/>
+          <line x1="1.5" y1="12" x2="10.5" y2="12" stroke="#556b82" stroke-width="1.3" stroke-linecap="round"/>
+          <line x1="13.5" y1="12" x2="14.5" y2="12" stroke="#556b82" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <!-- Dropdowns -->
+      <select class="toolbar-select" id="filter-type" onchange="filterRows()">
+        <option value="">All Types</option>
+        <option value="Supply Shortage">Supply Shortage</option>
+        <option value="Shipment Delay">Shipment Delay</option>
+        <option value="OC Deviation">OC Deviation</option>
+        <option value="Renegotiation">Renegotiation</option>
+        <option value="Reliability Risk">Reliability Risk</option>
+        <option value="Invoice">Invoice</option>
+      </select>
+
+      <select class="toolbar-select" id="filter-supplier" onchange="filterRows()">
+        <option value="">All Suppliers</option>
+        <option value="Volterra">Volterra Components</option>
+        <option value="Robotech">Robotech</option>
+        <option value="Apex Precision">Apex Precision</option>
+        <option value="SinoElec">SinoElec</option>
+        <option value="GlobalParts">GlobalParts Ltd.</option>
+        <option value="NovaTech">NovaTech</option>
+        <option value="PrecisionParts">PrecisionParts</option>
+      </select>
+
+      <select class="toolbar-select" id="filter-priority" onchange="filterRows()">
+        <option value="">All Priorities</option>
+        <option value="High">High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low">Low</option>
+      </select>
+
+      <div class="toolbar-spacer"></div>
+
+      <span class="toolbar-count" id="toolbar-count"></span>
+
+      <!-- Search -->
+      <div class="toolbar-search">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <circle cx="6.5" cy="6.5" r="4.5" stroke="#8c9bad" stroke-width="1.4"/>
+          <path d="M10 10L14 14" stroke="#8c9bad" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <input type="text" placeholder="Search" id="inbox-search" oninput="filterRows()" />
+      </div>
+
+      <!-- Sort button -->
+      <button class="toolbar-btn" title="Sort" onclick="this.classList.toggle('active')">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 4h10M3 8h7M3 12h4" stroke="#556b82" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:34%">Title</th>
+            <th style="width:26%">Description</th>
+            <th style="width:9%">Priority</th>
+            <th style="width:10%">Confidence Score</th>
+            <th style="width:10%">Business Impact</th>
+            <th style="width:9%">Alert Date</th>
+            <th style="width:2%"></th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- Row 1 — Forecast commit gap -->
+          <tr class="priority-high" data-status="Pending" data-type="Supply Shortage" data-supplier="Volterra" onclick="window.location='exception_detail.html?exc=1'">
+            <td class="col-title">Send shortage request to Volterra Components — Plant US01 at risk</td>
+            <td class="col-desc">Volterra confirmed 60% of forecast for Plant US01, Weeks 4–6. Cumulative erosion: Forecast 100% → OC 60% → ASN 45%.</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="col-confidence">88%</td>
+            <td class="col-saving" style="color:#bb0000;">$240K</td>
+            <td class="col-date">Apr 10, 2026</td>
+            <td class="col-chevron">»</td>
+          </tr>
+
+          <!-- Row 2 — SRI alert -->
+          <tr class="priority-high" data-status="Pending" data-type="Reliability Risk" data-supplier="Robotech Volterra" onclick="window.location='supplier_reliability.html'">
+            <td class="col-title">Mitigate supplier reliability risk — Robotech &amp; Volterra · $31.2M exposed</td>
+            <td class="col-desc">OTIF dropped to 81% from 92%. Robotech &amp; Volterra driving 67% of APAC Electronics spend. $31.2M at risk.</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="col-confidence">92%</td>
+            <td class="col-saving">$31.2M</td>
+            <td class="col-date">Apr 10, 2026</td>
+            <td class="col-chevron">»</td>
+          </tr>
+
+          <!-- Row 3 — Volterra renegotiation -->
+          <tr class="priority-high" data-status="Pending" data-type="Renegotiation" data-supplier="Volterra" onclick="window.location='sourcing_detail.html'">
+            <td class="col-title">Renegotiate with Volterra Components to recover $180–210K</td>
+            <td class="col-desc">Contract renewal window open. Copper prices down 14%. Leverage supplier performance data to negotiate revised pricing.</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="col-confidence">95%</td>
+            <td class="col-saving">$180–210K</td>
+            <td class="col-date">Apr 12, 2026</td>
+            <td class="col-chevron">»</td>
+          </tr>
+
+          <!-- Row 4 — ASN partial shipment -->
+          <tr class="priority-high" data-status="Pending" data-type="Shipment Delay" data-supplier="Apex Precision" onclick="window.location='exception_detail.html?exc=2'">
+            <td class="col-title">Expedite shipment — Apex Precision missed hard ship date</td>
+            <td class="col-desc">Volterra's latest ASN covers only 45% of confirmed OC quantity for Week 6. No revised ETA provided.</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="col-confidence">85%</td>
+            <td class="col-saving" style="color:#bb0000;">$186K</td>
+            <td class="col-date">Apr 10, 2026</td>
+            <td class="col-chevron">»</td>
+          </tr>
+
+          <!-- Row 5 — Robotech OC deviations -->
+          <tr class="priority-high" data-status="Pending" data-type="OC Deviation" data-supplier="Robotech" onclick="window.location='exception_detail.html?exc=3'">
+            <td class="col-title">Batch-approve 14 in-tolerance OC deviations · escalate 3 flagged</td>
+            <td class="col-desc">17 open OC deviations from Robotech. 3 exceed tolerance thresholds, cannot be auto-approved. Manual review required before Week 5 cut-off.</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="col-confidence">81%</td>
+            <td class="col-saving" style="color:#bb0000;">$95K</td>
+            <td class="col-date">Apr 9, 2026</td>
+            <td class="col-chevron">»</td>
+          </tr>
+
+          <!-- Row 6 — Missing ASN -->
+          <tr class="priority-med" data-status="Pending" data-type="Shipment Delay" data-supplier="Volterra" onclick="window.location='exception_detail.html?exc=2'">
+            <td class="col-title">Chase ASN confirmations — 2 Volterra shipments unconfirmed, Week 5</td>
+            <td class="col-desc">2 shipments expected Week 5 have no ASN submitted. Need-by date approaching within 4 days.</td>
+            <td><span class="badge badge-med">Medium</span></td>
+            <td class="col-confidence">79%</td>
+            <td class="col-saving" style="color:#e76500;">$68K</td>
+            <td class="col-date">Apr 9, 2026</td>
+            <td class="col-chevron">»</td>
+          </tr>
+
+          <!-- Row 7 — OC approvals due -->
+          <tr class="priority-med" data-status="Pending" data-type="OC Deviation" data-supplier="Robotech" onclick="window.location='exception_detail.html?exc=3'">
+            <td class="col-title">Review overdue OC approvals — 3 items aging beyond 2 days</td>
+            <td class="col-desc">3 order confirmation deviations pending buyer review for more than 2 days. Risk of aging exceptions.</td>
+            <td><span class="badge badge-med">Medium</span></td>
+            <td class="col-confidence">76%</td>
+            <td class="col-saving" style="color:#e76500;">$42K</td>
+            <td class="col-date">Apr 8, 2026</td>
+            <td class="col-chevron">»</td>
+          </tr>
+
+          <!-- Row 8 — GlobalParts renegotiation -->
+          <tr class="priority-med" data-status="Pending" data-type="Renegotiation" data-supplier="GlobalParts" onclick="window.location='sourcing_detail.html'">
+            <td class="col-title">Renegotiate with GlobalParts Ltd. — $98K savings opportunity</td>
+            <td class="col-desc">Market index shift and upcoming contract window create negotiation leverage. AI analysis recommends initiating renegotiation now.</td>
+            <td><span class="badge badge-med">Medium</span></td>
+            <td class="col-confidence">87%</td>
+            <td class="col-saving">$98K</td>
+            <td class="col-date">Apr 8, 2026</td>
+            <td class="col-chevron">»</td>
+          </tr>
+
+          <!-- Row 9 — Low priority -->
+          <tr class="priority-low" data-status="Pending" data-type="Supply Shortage" data-supplier="SinoElec" onclick="window.location='exception_detail.html?exc=1'">
+            <td class="col-title">Monitor forecast commit — SinoElec below 90% threshold</td>
+            <td class="col-desc">SinoElec committed 88% of forecast for Plant APAC02, Week 7. Within tolerance but below 90% threshold.</td>
+            <td><span class="badge badge-low">Low</span></td>
+            <td class="col-confidence">71%</td>
+            <td class="col-saving" style="color:#556b82;">$18K</td>
+            <td class="col-date">Apr 8, 2026</td>
+            <td class="col-chevron">»</td>
+          </tr>
+
+          <!-- ── WAITING rows ──────────────────────────────────── -->
+
+          <!-- W1 — Supplier response pending -->
+          <tr class="priority-high" data-status="Waiting" data-type="Shipment Delay" data-supplier="Robotech">
+            <td class="col-title">Awaiting revised delivery schedule — Robotech, PO #8847-B</td>
+            <td class="col-desc">Shortage request sent Apr 9. Robotech acknowledged. Revised ETA expected within 48 hrs. Watching Week 6 impact.</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="col-confidence">83%</td>
+            <td class="col-saving" style="color:#bb0000;">$160K</td>
+            <td class="col-date">Apr 9, 2026</td>
+            <td class="col-chevron"><span class="badge badge-waiting">Waiting</span></td>
+          </tr>
+
+          <!-- W2 — Finance approval pending -->
+          <tr class="priority-med" data-status="Waiting" data-type="Supply Shortage" data-supplier="NovaTech">
+            <td class="col-title">Pending finance approval — emergency spot buy, NovaTech capacitors</td>
+            <td class="col-desc">Spot buy request submitted to finance Apr 8. Approval required before order can be placed. $52K ceiling pre-approved.</td>
+            <td><span class="badge badge-med">Medium</span></td>
+            <td class="col-confidence">77%</td>
+            <td class="col-saving" style="color:#e76500;">$52K</td>
+            <td class="col-date">Apr 8, 2026</td>
+            <td class="col-chevron"><span class="badge badge-waiting">Waiting</span></td>
+          </tr>
+
+          <!-- ── COMPLETE rows ──────────────────────────────────── -->
+
+          <tr class="priority-high" data-status="Complete" data-type="Shipment Delay" data-supplier="Volterra">
+            <td class="col-title">Resolved: Expedite air freight — Volterra capacitors, Plant DE02</td>
+            <td class="col-desc">Air freight approved and booked Apr 5. Parts arrived Apr 7. Production line resumed. No further action required.</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="col-confidence">97%</td>
+            <td class="col-saving">$310K</td>
+            <td class="col-date">Apr 5, 2026</td>
+            <td class="col-chevron"><span class="badge badge-done">Complete</span></td>
+          </tr>
+
+          <!-- C2 -->
+          <tr class="priority-high" data-status="Complete" data-type="Renegotiation" data-supplier="Apex Precision">
+            <td class="col-title">Resolved: Renegotiate Apex Precision pricing — Q2 contract</td>
+            <td class="col-desc">New pricing agreed Apr 4. 7.2% reduction on 4 SKUs. Contract amendment signed. Savings locked for Q2–Q3.</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="col-confidence">94%</td>
+            <td class="col-saving">$142K</td>
+            <td class="col-date">Apr 4, 2026</td>
+            <td class="col-chevron"><span class="badge badge-done">Complete</span></td>
+          </tr>
+
+          <!-- C3 -->
+          <tr class="priority-med" data-status="Complete" data-type="OC Deviation" data-supplier="Robotech">
+            <td class="col-title">Resolved: Approve 9 OC deviations — Robotech batch Apr 3</td>
+            <td class="col-desc">All 9 deviations within tolerance. Batch-approved via automated workflow. Confirmation sent to Robotech.</td>
+            <td><span class="badge badge-med">Medium</span></td>
+            <td class="col-confidence">91%</td>
+            <td class="col-saving">$78K</td>
+            <td class="col-date">Apr 3, 2026</td>
+            <td class="col-chevron"><span class="badge badge-done">Complete</span></td>
+          </tr>
+
+          <!-- C4 -->
+          <tr class="priority-med" data-status="Complete" data-type="Shipment Delay" data-supplier="SinoElec">
+            <td class="col-title">Resolved: Chase missing ASN — 3 SinoElec shipments, Week 3</td>
+            <td class="col-desc">ASNs received Apr 2 after follow-up. All 3 shipments on track. Need-by dates met.</td>
+            <td><span class="badge badge-med">Medium</span></td>
+            <td class="col-confidence">88%</td>
+            <td class="col-saving">$34K</td>
+            <td class="col-date">Apr 2, 2026</td>
+            <td class="col-chevron"><span class="badge badge-done">Complete</span></td>
+          </tr>
+
+          <!-- C5 -->
+          <tr class="priority-high" data-status="Complete" data-type="Reliability Risk" data-supplier="SinoElec NovaTech">
+            <td class="col-title">Resolved: Mitigate single-source risk — SinoElec MLCC supply</td>
+            <td class="col-desc">Dual-source qualification of NovaTech approved Mar 31. Safety stock target raised. Risk level reduced to Medium.</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="col-confidence">89%</td>
+            <td class="col-saving">$220K</td>
+            <td class="col-date">Mar 31, 2026</td>
+            <td class="col-chevron"><span class="badge badge-done">Complete</span></td>
+          </tr>
+
+          <!-- C6 -->
+          <tr class="priority-low" data-status="Complete" data-type="Supply Shortage" data-supplier="PrecisionParts">
+            <td class="col-title">Resolved: Update lead time — PrecisionParts connector SKU #PP-4421</td>
+            <td class="col-desc">Lead time updated from 6 to 9 weeks in ERP. Planning buffers adjusted. MRP re-run completed.</td>
+            <td><span class="badge badge-low">Low</span></td>
+            <td class="col-confidence">82%</td>
+            <td class="col-saving" style="color:#556b82;">$11K</td>
+            <td class="col-date">Mar 29, 2026</td>
+            <td class="col-chevron"><span class="badge badge-done">Complete</span></td>
+          </tr>
+
+          <!-- C7 -->
+          <tr class="priority-med" data-status="Complete" data-type="Invoice" data-supplier="Volterra">
+            <td class="col-title">Resolved: Approve early payment discount — Volterra, invoice INV-9921</td>
+            <td class="col-desc">2/10 net 30 discount approved and actioned Mar 28. $8.4K captured. Treasury notified.</td>
+            <td><span class="badge badge-med">Medium</span></td>
+            <td class="col-confidence">96%</td>
+            <td class="col-saving">$8K</td>
+            <td class="col-date">Mar 28, 2026</td>
+            <td class="col-chevron"><span class="badge badge-done">Complete</span></td>
+          </tr>
+
+          <!-- C8 -->
+          <tr class="priority-high" data-status="Complete" data-type="Shipment Delay" data-supplier="Robotech">
+            <td class="col-title">Resolved: Escalate customs hold — Robotech shipment SHP-0087</td>
+            <td class="col-desc">Customs documentation corrected and resubmitted Mar 27. Clearance granted same day. Shipment delivered Mar 28.</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="col-confidence">93%</td>
+            <td class="col-saving">$195K</td>
+            <td class="col-date">Mar 27, 2026</td>
+            <td class="col-chevron"><span class="badge badge-done">Complete</span></td>
+          </tr>
+
+          <!-- C9 -->
+          <tr class="priority-med" data-status="Complete" data-type="Invoice" data-supplier="GlobalParts">
+            <td class="col-title">Resolved: Correct invoice discrepancy — GlobalParts, 3 POs overcharged</td>
+            <td class="col-desc">Credit memo requested and received Mar 26. $14.2K recovered. AP records updated.</td>
+            <td><span class="badge badge-med">Medium</span></td>
+            <td class="col-confidence">99%</td>
+            <td class="col-saving">$14K</td>
+            <td class="col-date">Mar 26, 2026</td>
+            <td class="col-chevron"><span class="badge badge-done">Complete</span></td>
+          </tr>
+
+          <!-- C10 -->
+          <tr class="priority-low" data-status="Complete" data-type="Supply Shortage" data-supplier="NovaTech">
+            <td class="col-title">Resolved: Monitor forecast commit — NovaTech Week 2 recovery</td>
+            <td class="col-desc">NovaTech commit recovered to 96% by Week 2 close. No further action needed. Closed Mar 25.</td>
+            <td><span class="badge badge-low">Low</span></td>
+            <td class="col-confidence">78%</td>
+            <td class="col-saving" style="color:#556b82;">$9K</td>
+            <td class="col-date">Mar 25, 2026</td>
+            <td class="col-chevron"><span class="badge badge-done">Complete</span></td>
+          </tr>
+
+          <!-- C11 -->
+          <tr class="priority-high" data-status="Complete" data-type="Supply Shortage" data-supplier="Apex Precision PrecisionParts">
+            <td class="col-title">Resolved: Activate backup supplier — Apex Precision, SKU #AP-7701</td>
+            <td class="col-desc">PrecisionParts activated as backup source Mar 24. 500 units bridged. Apex Precision capacity confirmed for Week 5 onwards.</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="col-confidence">90%</td>
+            <td class="col-saving">$275K</td>
+            <td class="col-date">Mar 24, 2026</td>
+            <td class="col-chevron"><span class="badge badge-done">Complete</span></td>
+          </tr>
+
+          <!-- C12 -->
+          <tr class="priority-med" data-status="Complete" data-type="Renegotiation" data-supplier="SinoElec">
+            <td class="col-title">Resolved: Renegotiate freight terms — SinoElec annual contract</td>
+            <td class="col-desc">DAP terms agreed, replacing DDP. Estimated freight saving $31K annually. Contract signed Mar 22.</td>
+            <td><span class="badge badge-med">Medium</span></td>
+            <td class="col-confidence">85%</td>
+            <td class="col-saving">$31K</td>
+            <td class="col-date">Mar 22, 2026</td>
+            <td class="col-chevron"><span class="badge badge-done">Complete</span></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Timestamp
+  function setTimestamp() {
+    const now = new Date();
+    const h = now.getHours(), m = now.getMinutes().toString().padStart(2,'0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = (h % 12) || 12;
+    document.getElementById('page-timestamp').textContent =
+      'Last updated ' + h12 + ':' + m + ' ' + ampm;
+  }
+  setTimestamp();
+
+  function doRefresh(btn) {
+    btn.disabled = true;
+    btn.textContent = 'Refreshing…';
+    setTimeout(() => {
+      setTimestamp();
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5c1.8 0 3.4.87 4.4 2.2" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/><path d="M12 2v3h-3" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Refresh`;
+    }, 800);
+  }
+
+  let activeStatus = 'Pending';
+
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeStatus = tab.querySelector('.tab-label').textContent.trim();
+      if (activeStatus === 'All') activeStatus = null;
+      filterRows();
+    });
+  });
+
+  function filterRows() {
+    const query   = (document.getElementById('inbox-search').value || '').toLowerCase();
+    const type     = document.getElementById('filter-type').value;
+    const supplier = document.getElementById('filter-supplier').value;
+    const priority = document.getElementById('filter-priority').value;
+    const rows     = document.querySelectorAll('tbody tr');
+    let visible = 0;
+
+    rows.forEach(row => {
+      const rowStatus   = row.dataset.status   || 'Pending';
+      const rowType     = row.dataset.type      || '';
+      const rowSupplier = row.dataset.supplier  || '';
+      const rowPriority = row.querySelector('.badge') ? row.querySelector('.badge').textContent.trim() : '';
+      const text        = row.textContent.toLowerCase();
+
+      const ok = (!activeStatus   || rowStatus === activeStatus)
+              && (!type           || rowType === type)
+              && (!supplier       || rowSupplier.includes(supplier))
+              && (!priority       || rowPriority === priority)
+              && (!query          || text.includes(query));
+
+      row.style.display = ok ? '' : 'none';
+      if (ok) visible++;
+    });
+
+    document.getElementById('toolbar-count').textContent = visible + ' item' + (visible !== 1 ? 's' : '');
+  }
+
+  filterRows();
+</script>
+<script src="shell.js"></script>
+</body>
+</html>

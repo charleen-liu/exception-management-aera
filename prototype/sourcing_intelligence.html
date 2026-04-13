@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sourcing Intelligence — SAP Business Network</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --white:      #ffffff;
+      --page-bg:    #f5f6f7;
+      --title:      #1d2d3e;
+      --label:      #556b82;
+      --border:     #e5e5e5;
+      --border-mid: #d9d9d9;
+      --urgent:     #bb0000;
+      --high:       #e76500;
+      --info:       #0064d9;
+      --positive:   #256f3a;
+      --aera:       #6b3fa0;
+      --aera-bg:    #f4effa;
+      --aera-bd:    #d4b8f0;
+      --radius-sm:  4px;
+      --radius:     8px;
+    }
+
+    body {
+      font-family: "72","72full",Arial,Helvetica,sans-serif;
+      font-size: 14px;
+      background: var(--page-bg);
+      color: var(--title);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .app-body { display:flex; flex:1; min-height:0; }
+
+    .main {
+      flex:1; display:flex; flex-direction:column;
+      min-height:0; min-width:0; overflow:hidden;
+    }
+
+    /* ── Page Header ─────────────────────────────────────────── */
+    .page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border-mid);
+      padding: 16px 24px 0;
+      flex-shrink: 0;
+    }
+
+    .breadcrumb {
+      display:flex; align-items:center; gap:6px;
+      font-size: 13px; color: var(--info);
+      margin-bottom:8px;
+    }
+    .breadcrumb a { color: var(--info); text-decoration:none; cursor:pointer; }
+    .breadcrumb a:hover { text-decoration:underline; }
+    .breadcrumb-sep { color: var(--label); }
+
+    .page-title {
+      font-family:"72Black","72Blackfull","72","72full",Arial,sans-serif;
+      font-size:1.375rem; color:#131e29; line-height:1.25;
+      margin-bottom:4px;
+    }
+    .page-subtitle { font-size:13px; color:var(--label); margin-bottom:14px; }
+
+    /* ── Content ─────────────────────────────────────────────── */
+    .content-scroll {
+      flex:1; overflow-y:auto;
+      padding: 24px;
+      display:flex; flex-direction:column; gap:20px;
+    }
+
+    /* ── Cards ───────────────────────────────────────────────── */
+    .card {
+      background:var(--white);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:20px;
+    }
+
+    .card-title {
+      font-size:14px; font-weight:700; color:var(--title);
+      margin-bottom:4px;
+    }
+
+    /* ── Agent bubble ────────────────────────────────────────── */
+    .agent-card {
+      background: var(--aera-bg);
+      border: 1.5px solid var(--aera-bd);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+    }
+
+    .agent-header {
+      display:flex; align-items:center; gap:10px;
+      margin-bottom:14px;
+    }
+
+    .agent-avatar {
+      width:36px; height:36px; border-radius:50%;
+      background: var(--aera);
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0;
+    }
+
+    .agent-name { font-size:13px; font-weight:700; color:var(--aera); }
+    .agent-role { font-size:11px; color:var(--label); }
+
+    .agent-message {
+      font-size:14px; color:var(--title); line-height:1.65;
+    }
+    .agent-message strong { color:var(--aera); }
+
+    /* typing animation */
+    .typing-dot {
+      display:inline-block;
+      width:6px; height:6px; border-radius:50%;
+      background:var(--aera); margin:0 2px;
+      animation: blink 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay:.2s; }
+    .typing-dot:nth-child(3) { animation-delay:.4s; }
+    @keyframes blink {
+      0%,80%,100% { opacity:.2; }
+      40% { opacity:1; }
+    }
+
+    /* ── Signal cards ────────────────────────────────────────── */
+    .signals-grid {
+      display:grid; grid-template-columns:1fr 1fr 1fr;
+      gap:14px; margin-top:16px;
+    }
+    .signal-card {
+      border:1px solid var(--border);
+      border-radius:var(--radius-sm);
+      padding:14px;
+      background:var(--white);
+      position:relative;
+    }
+    .signal-card.triggered {
+      border-color:var(--aera-bd);
+      background:var(--white);
+    }
+    .signal-icon { margin-bottom:8px; }
+    .signal-title { font-size:13px; font-weight:700; color:var(--title); margin-bottom:4px; }
+    .signal-desc { font-size:12px; color:var(--label); line-height:1.5; }
+    .signal-badge {
+      position:absolute; top:10px; right:10px;
+      font-size:10px; font-weight:700;
+      padding:2px 8px; border-radius:10px;
+    }
+    .signal-badge.triggered { background:var(--aera-bg); color:var(--aera); border:1px solid var(--aera-bd); }
+    .signal-badge.optional  { background:#f0f2f4; color:var(--label); }
+
+    /* ── Action strip ────────────────────────────────────────── */
+    .action-strip {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:16px 20px;
+      background:var(--white);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+    }
+    .action-strip-text { font-size:14px; color:var(--title); line-height:1.5; }
+    .action-strip-text strong { font-weight:700; }
+
+    .btn {
+      font-family:"72","72full",Arial,sans-serif;
+      font-size:14px; font-weight:700;
+      padding:8px 24px; border-radius:var(--radius-sm);
+      cursor:pointer; border:none; line-height:1.4;
+      white-space:nowrap; flex-shrink:0;
+    }
+    .btn-primary   { background:#0064d9; color:#fff; }
+    .btn-primary:hover { background:#0057b8; }
+    .btn-aera      { background:var(--aera); color:#fff; }
+    .btn-aera:hover { background:#5a3385; }
+    .btn-ghost {
+      background:transparent; color:var(--title);
+      border:1px solid var(--border-mid);
+    }
+    .btn-ghost:hover { background:#f5f5f5; }
+
+    /* ── Scope summary ───────────────────────────────────────── */
+    .scope-row {
+      display:flex; gap:24px; flex-wrap:wrap;
+      padding:14px 0;
+      border-bottom:1px solid var(--border);
+    }
+    .scope-row:last-child { border-bottom:none; }
+    .scope-item { display:flex; flex-direction:column; gap:2px; }
+    .scope-label { font-size:11px; color:var(--label); text-transform:uppercase; letter-spacing:.4px; }
+    .scope-value { font-size:13px; font-weight:700; color:var(--title); }
+
+    /* Progress steps */
+    .flow-steps {
+      display:flex; align-items:center; gap:0;
+      margin-bottom:6px;
+    }
+    .flow-step {
+      display:flex; align-items:center; gap:8px;
+    }
+    .flow-step-num {
+      width:24px; height:24px; border-radius:50%;
+      font-size:12px; font-weight:700;
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0;
+    }
+    .flow-step-num.done  { background:#0064d9; color:#fff; }
+    .flow-step-num.active{ background:var(--aera); color:#fff; }
+    .flow-step-num.next  { background:#e0e4e8; color:var(--label); }
+    .flow-step-label { font-size:12px; color:var(--label); white-space:nowrap; }
+    .flow-step-label.active { color:var(--aera); font-weight:700; }
+    .flow-connector { width:32px; height:2px; background:#e0e4e8; flex-shrink:0; }
+    .flow-connector.done { background:#0064d9; }
+  </style>
+</head>
+<body data-page="scexceptions">
+
+<div id="bn-shell-root"></div>
+
+<div class="app-body">
+  <div id="bn-sidenav-root"></div>
+
+  <main class="main">
+
+    <div class="page-header">
+      <div class="breadcrumb">
+        <a href="exception_inbox.html">Exception Inbox</a>
+        <span class="breadcrumb-sep">›</span>
+        <a href="supplier_reliability.html">Supplier Reliability</a>
+        <span class="breadcrumb-sep">›</span>
+        <span style="color:var(--label);">Sourcing Intelligence</span>
+      </div>
+      <div class="page-title">Sourcing Intelligence</div>
+      <div class="page-subtitle">Automated sourcing event triggered by Supplier Reliability Agent · APAC Electronics – GPU commodity</div>
+    </div>
+
+    <div class="content-scroll">
+
+      <!-- E2E flow progress -->
+      <div class="card" style="padding:14px 20px;">
+        <div style="font-size:11px;color:var(--label);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">End-to-End Flow Progress</div>
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-num done">✓</div>
+            <span class="flow-step-label">Exception Management</span>
+          </div>
+          <div class="flow-connector done"></div>
+          <div class="flow-step">
+            <div class="flow-step-num done">✓</div>
+            <span class="flow-step-label">Supplier Reliability</span>
+          </div>
+          <div class="flow-connector done"></div>
+          <div class="flow-step">
+            <div class="flow-step-num active">3</div>
+            <span class="flow-step-label active">Sourcing Intelligence</span>
+          </div>
+          <div class="flow-connector"></div>
+          <div class="flow-step">
+            <div class="flow-step-num next">4</div>
+            <span class="flow-step-label">Supplier Discovery</span>
+          </div>
+          <div class="flow-connector"></div>
+          <div class="flow-step">
+            <div class="flow-step-num next">5</div>
+            <span class="flow-step-label">Contract Negotiation</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agent message -->
+      <div class="agent-card" id="agent-card">
+        <div class="agent-header">
+          <div class="agent-avatar">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M9 3v12M5 7l4-4 4 4" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="agent-name">Aera · Sourcing Intelligence Agent</div>
+            <div class="agent-role">Autonomous sourcing trigger · APAC Electronics portfolio</div>
+          </div>
+        </div>
+
+        <div class="agent-message" id="agent-msg-1" style="display:none;">
+          I've been monitoring your <strong>APAC Electronics – GPU</strong> supplier portfolio and detected a structural reliability risk that requires a sourcing response.
+        </div>
+        <div class="agent-message" id="agent-msg-2" style="display:none;margin-top:12px;">
+          <strong>Robotech</strong> (SRI: 71, $21.8M spend) and <strong>Volterra</strong> (SRI: 81, $7.1M spend) together represent 67% of your APAC GPU spend. Both show declining OTIF trends — Robotech crossed below the 90% threshold in October and is projected to breach the reliability floor of 80 within 45 days. Your portfolio score of 83 is already 14 points below the network peer average.
+        </div>
+        <div class="agent-message" id="agent-msg-3" style="display:none;margin-top:12px;">
+          I am <strong>triggering a sourcing event</strong> to identify and qualify alternative GPU suppliers for the APAC region. I will use the SAP Business Network + Aera Supplier Discovery to surface best-fit alternatives with scenario modeling and potential savings estimates. A direct award path is recommended to skip the RFX cycle given the urgency.
+        </div>
+        <div class="agent-message" id="agent-msg-4" style="display:none;margin-top:12px;">
+          <strong>Shall I proceed to find alternative suppliers?</strong>
+        </div>
+        <div id="typing-indicator" style="margin-top:8px;">
+          <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+        </div>
+      </div>
+
+      <!-- Signals that triggered this event -->
+      <div class="card" id="signals-card" style="display:none;">
+        <div class="card-title">Signals That Triggered This Sourcing Event</div>
+        <div style="font-size:12px;color:var(--label);margin-bottom:14px;">Primary signal confirmed · Optional signals available for broader scope</div>
+        <div class="signals-grid">
+
+          <div class="signal-card triggered">
+            <span class="signal-badge triggered">Triggered</span>
+            <div class="signal-icon">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="9" fill="#d32f2f" fill-opacity=".1" stroke="#d32f2f" stroke-opacity=".4"/>
+                <path d="M10 6v5M10 13.5h.01" stroke="#d32f2f" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="signal-title">Supplier Reliability Decline</div>
+            <div class="signal-desc">Robotech SRI: 71 (↓20 pts), Volterra SRI: 81 (↓10 pts). Together 67% of APAC GPU spend. Breach of reliability threshold projected in 45 days.</div>
+          </div>
+
+          <div class="signal-card">
+            <span class="signal-badge optional">Optional</span>
+            <div class="signal-icon">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="9" fill="#e76500" fill-opacity=".1" stroke="#e76500" stroke-opacity=".4"/>
+                <path d="M10 6v8M7 11l3 3 3-3" stroke="#e76500" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="signal-title">Increased Trading Volume</div>
+            <div class="signal-desc">AI Hardware demand on the network is up 40% in EMEA &amp; APAC. Current leverage represents 12% of addressable community demand in this category.</div>
+          </div>
+
+          <div class="signal-card">
+            <span class="signal-badge optional">Optional</span>
+            <div class="signal-icon">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="9" fill="#0064d9" fill-opacity=".1" stroke="#0064d9" stroke-opacity=".4"/>
+                <path d="M6 14l2-4 2 4 2-6 2 6" stroke="#0064d9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="signal-title">Market Index Movement</div>
+            <div class="signal-desc">Electronics components pricing up 9% on the network in last 30 days. 3 contracts pending renewal. Contracted rates currently 7% below community benchmarks.</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Scope summary + CTA -->
+      <div class="action-strip" id="cta-card" style="display:none;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--title);margin-bottom:8px;">Sourcing Event Scope</div>
+          <div class="scope-row">
+            <div class="scope-item"><span class="scope-label">Commodity</span><span class="scope-value">Electronics – GPU</span></div>
+            <div class="scope-item"><span class="scope-label">Region</span><span class="scope-value">APAC</span></div>
+            <div class="scope-item"><span class="scope-label">Suppliers to replace</span><span class="scope-value">Robotech, Volterra</span></div>
+            <div class="scope-item"><span class="scope-label">Spend at risk</span><span class="scope-value" style="color:var(--urgent);">$31.2M</span></div>
+            <div class="scope-item"><span class="scope-label">Award type</span><span class="scope-value">Direct Award (skip RFX)</span></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-shrink:0;align-items:flex-end;">
+          <button class="btn btn-ghost">Modify Scope</button>
+          <button class="btn btn-aera" onclick="window.location='supplier_discovery.html'">
+            Find Alternative Suppliers →
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  // Animate agent messages appearing in sequence
+  const messages = ['agent-msg-1','agent-msg-2','agent-msg-3','agent-msg-4'];
+  const delays   = [600, 1800, 3200, 4600];
+
+  messages.forEach(function(id, i) {
+    setTimeout(function() {
+      document.getElementById(id).style.display = 'block';
+    }, delays[i]);
+  });
+
+  // After last message, hide typing and show signals + CTA
+  setTimeout(function() {
+    document.getElementById('typing-indicator').style.display = 'none';
+    document.getElementById('signals-card').style.display = 'block';
+    document.getElementById('cta-card').style.display = 'flex';
+  }, 5400);
+</script>
+
+<script src="shell.js"></script>
+</body>
+</html>

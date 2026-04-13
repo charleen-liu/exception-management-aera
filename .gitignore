@@ -1,0 +1,13 @@
+# Large media
+assets/*.mov
+assets/*.mp4
+
+# Backups
+backup/
+
+# macOS
+.DS_Store
+assets/.DS_Store
+
+# Zip archives
+*.zip

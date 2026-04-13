@@ -300,10 +300,12 @@
 
   // ── Guided Demo Step Indicator ────────────────────────────────
   const demoSteps = [
-    { label: 'Home',                  href: 'SBN_home.html',             },
-    { label: 'Exception Inbox',       href: 'exception_inbox.html',      },
-    { label: 'Supplier Reliability',  href: 'supplier_reliability.html', },
-    { label: 'Sourcing Detail',       href: 'sourcing_detail.html',      },
+    { label: 'Home',                              href: 'SBN_home.html',                         },
+    { label: 'Exception Inbox',                   href: 'exception_inbox.html',                  },
+    { label: 'Exception Detail',                  href: 'exception_detail.html?exc=1',           },
+    { label: 'Forecast Detail',                   href: 'forecast_detail.html',                  },
+    { label: 'Supplier Reliability Intelligence', href: 'supplier_reliability.html',             },
+    { label: 'Sourcing Detail',                   href: 'sourcing_detail.html',                  },
   ];
 
   const pageFileMap = {
@@ -312,12 +314,13 @@
     'exception_inbox.html': 1,
     'exception_management.html': 1,
     'exception_management_card.html': 1,
-    'exception_detail.html': 1,
-    'supplier_reliability.html': 2,
-    'sourcing_intelligence.html': 3,
-    'supplier_discovery.html': 3,
-    'contract_negotiation.html': 3,
-    'sourcing_detail.html': 3,
+    'exception_detail.html': 2,
+    'forecast_detail.html': 3,
+    'supplier_reliability.html': 4,
+    'sourcing_intelligence.html': 5,
+    'supplier_discovery.html': 5,
+    'contract_negotiation.html': 5,
+    'sourcing_detail.html': 5,
   };
 
   const currentFile = window.location.pathname.split('/').pop() || 'SBN_home.html';
@@ -374,10 +377,10 @@
       stepInner.appendChild(dot);
     });
 
-    // Step label
+    // Step label — dot + name, no "Step X"
     var label = document.createElement('span');
-    label.style.cssText = 'font-size:11px;font-weight:700;color:#6b3fa0;margin-left:6px;font-family:"72","72full",Arial,sans-serif;white-space:nowrap;';
-    label.textContent = 'Step ' + (currentStep + 1) + ' / 4 · ' + demoSteps[currentStep].label;
+    label.style.cssText = 'font-size:11px;font-weight:700;color:#6b3fa0;margin-left:4px;font-family:"72","72full",Arial,sans-serif;white-space:nowrap;';
+    label.textContent = '· ' + demoSteps[currentStep].label;
     stepInner.appendChild(label);
 
     // Prev / Next

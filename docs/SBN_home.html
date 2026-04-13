@@ -491,7 +491,7 @@
 <div class="notif-overlay" id="notif-overlay">
   <div class="notif-panel">
     <div class="notif-header">
-      <span class="notif-header-title">Notifications (4)</span>
+      <span class="notif-header-title">Notifications (3)</span>
       <div class="notif-header-actions">
         <a>View All</a>
       </div>
@@ -504,7 +504,27 @@
       Important
     </div>
 
-    <!-- SRI Alert — new -->
+    <!-- Story 1 — Forecast / Supply Shortage -->
+    <div class="notif-item" onclick="window.location='exception_detail.html?exc=1'" style="cursor:pointer;">
+      <span class="notif-item-icon">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 1L1 14h14L8 1z" fill="#e76500" fill-opacity=".15" stroke="#e76500" stroke-width="1.2"/>
+          <path d="M8 6v4M8 11.5h.01" stroke="#e76500" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <div class="notif-item-body">
+        <div class="notif-item-title">Forecast Commit Gap — Volterra Components</div>
+        <div class="notif-item-desc">Volterra confirmed only 60% of forecast for Plant US01, Weeks 4–6. Cumulative erosion: Forecast 100% → OC 60% → ASN 45%. Stockout risk across 3 production lines.</div>
+        <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;">
+          <span style="font-size:10px;font-weight:700;background:#fff0e0;color:#e76500;padding:1px 7px;border-radius:10px;">Supply Shortage</span>
+          <span style="font-size:10px;font-weight:700;background:#fff0e0;color:#e76500;padding:1px 7px;border-radius:10px;">$240K at risk</span>
+        </div>
+        <div class="notif-item-time" style="margin-top:5px;">Today, 08:14 AM</div>
+      </div>
+      <span class="notif-item-more">···</span>
+    </div>
+
+    <!-- Story 2 — Supplier Reliability -->
     <div class="notif-item" onclick="window.location='supplier_reliability.html'" style="cursor:pointer;background:#fdf8ff;border-left:3px solid #6b3fa0;">
       <span class="notif-item-icon">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -525,7 +545,8 @@
       <span class="notif-item-more">···</span>
     </div>
 
-    <div class="notif-item">
+    <!-- Story 3 — Sourcing Renegotiation -->
+    <div class="notif-item" onclick="window.location='sourcing_detail.html'" style="cursor:pointer;">
       <span class="notif-item-icon">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M8 1L1 14h14L8 1z" fill="#e76500" fill-opacity=".15" stroke="#e76500" stroke-width="1.2"/>
@@ -533,42 +554,17 @@
         </svg>
       </span>
       <div class="notif-item-body">
-        <div class="notif-item-title">Forecast Commit Gap — Volterra Components</div>
-        <div class="notif-item-desc">Volterra confirmed only 60% of forecast for Plant US01, Weeks 4–6. Cumulative erosion: Forecast 100% → OC 60% → ASN 45%. Stockout risk across 3 production lines.</div>
-        <div class="notif-item-time">Today, 08:14 AM</div>
+        <div class="notif-item-title">Renegotiation Opportunity — Volterra Components</div>
+        <div class="notif-item-desc">Contract renewal window open. Copper prices down 14%. Aera recommends initiating renegotiation now to recover $180–210K based on supplier performance and market data.</div>
+        <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;">
+          <span style="font-size:10px;font-weight:700;background:#fff0e0;color:#e76500;padding:1px 7px;border-radius:10px;">Renegotiation</span>
+          <span style="font-size:10px;font-weight:700;background:#fff0e0;color:#e76500;padding:1px 7px;border-radius:10px;">$180–210K savings</span>
+        </div>
+        <div class="notif-item-time" style="margin-top:5px;">Today, 09:05 AM</div>
       </div>
       <span class="notif-item-more">···</span>
     </div>
 
-    <div class="notif-item">
-      <span class="notif-item-icon">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8 1L1 14h14L8 1z" fill="#e76500" fill-opacity=".15" stroke="#e76500" stroke-width="1.2"/>
-          <path d="M8 6v4M8 11.5h.01" stroke="#e76500" stroke-width="1.4" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <div class="notif-item-body">
-        <div class="notif-item-title">ASN Partial Shipment — 45% Received</div>
-        <div class="notif-item-desc">Volterra's latest ASN covers only 45% of the confirmed OC quantity for Week 6. 3 POs are at risk of line stoppage. No revised ETA provided by supplier.</div>
-        <div class="notif-item-time">Today, 07:52 AM</div>
-      </div>
-      <span class="notif-item-more">···</span>
-    </div>
-
-    <div class="notif-item">
-      <span class="notif-item-icon">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8 1L1 14h14L8 1z" fill="#e76500" fill-opacity=".15" stroke="#e76500" stroke-width="1.2"/>
-          <path d="M8 6v4M8 11.5h.01" stroke="#e76500" stroke-width="1.4" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <div class="notif-item-body">
-        <div class="notif-item-title">3 OC Deviations Require Escalation</div>
-        <div class="notif-item-desc">Of 17 open OC deviations from Volterra Components, 3 exceed tolerance thresholds and cannot be auto-approved. Manual review required before Week 5 cut-off.</div>
-        <div class="notif-item-time">Yesterday, 04:30 PM</div>
-      </div>
-      <span class="notif-item-more">···</span>
-    </div>
   </div>
 </div>
 

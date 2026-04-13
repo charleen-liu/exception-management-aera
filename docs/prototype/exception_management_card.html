@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exception Management (Simple Cards) — SAP Business Network</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:        #0070f2;
+      --white:        #ffffff;
+      --page-bg:      #f5f6f7;
+      --title:        #1d2d3e;
+      --label:        #556b82;
+      --border:       #e5e5e5;
+      --border-mid:   #d9d9d9;
+      --urgent:       #bb0000;
+      --urgent-bg:    #fff2f2;
+      --high:         #e76500;
+      --high-bg:      #fff8f0;
+      --info:         #0064d9;
+      --info-bg:      #edf6ff;
+      --positive:     #256f3a;
+      --ai-blue:      #0057b8;
+      --ai-blue-bg:   #eaf3ff;
+      --ai-blue-bd:   #b3d3f5;
+      --aera:         #6b3fa0;
+      --aera-bg:      #f4effa;
+      --aera-bd:      #d4b8f0;
+      --radius-sm:    4px;
+      --radius:       8px;
+    }
+
+    body {
+      font-family: "72", "72full", Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      background: var(--page-bg);
+      color: var(--title);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────── */
+    .app-body {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ── Main Content ────────────────────────────────────────── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    /* ── Page Header ─────────────────────────────────────────── */
+    .page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border-mid);
+      padding: 16px 32px 0;
+      flex-shrink: 0;
+    }
+    .page-header-row {
+      display: flex; align-items: flex-end;
+      justify-content: space-between;
+      padding-bottom: 14px;
+    }
+    .page-title {
+      font-family: "72Black","72Blackfull","72","72full",Arial,Helvetica,sans-serif;
+      font-size: 1.5rem; color: #131e29;
+      line-height: 1.2;
+    }
+    .page-subtitle {
+      font-size: 12px; color: var(--label);
+      margin-top: 3px;
+    }
+    .page-actions { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      font-size: 13px; font-family: inherit;
+      padding: 0 12px; height: 28px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border-mid);
+      background: var(--white); color: var(--title);
+      cursor: pointer; white-space: nowrap;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn:hover { background: #f5f6f7; }
+    .btn-primary {
+      background: var(--brand); border-color: var(--brand); color: #fff;
+    }
+    .btn-primary:hover { background: #0057c2; }
+
+    /* ── KPI + Command strip row ─────────────────────────────── */
+    .kpi-bar {
+      display: flex; align-items: stretch; gap: 0;
+      border-top: 1px solid var(--border);
+      margin: 0 -32px;
+      padding: 0 0 0 32px;
+      background: var(--page-bg);
+      overflow: hidden;
+    }
+    .kpi-item {
+      flex: 1; padding: 12px 16px;
+      background: #fff;
+      border-right: 1px solid var(--border-mid);
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      transition: background .12s;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .kpi-item:first-child { border-left: 1px solid var(--border-mid); }
+    .kpi-item:hover { background: #f5f6f7; }
+    .kpi-item.active { background: #ebf8ff; }
+    .kpi-item.kpi-urgent   { border-bottom-color: var(--urgent); }
+    .kpi-item.kpi-decision { border-bottom-color: #e07b00; }
+    .kpi-item.kpi-auto     { border-bottom-color: var(--positive); }
+    .kpi-item.kpi-all      { border-bottom-color: var(--brand); }
+    .kpi-label {
+      font-size: 11px; font-weight: 600; color: var(--label);
+      text-transform: uppercase; letter-spacing: .4px; white-space: nowrap;
+    }
+    .kpi-fraction {
+      display: flex; align-items: baseline; gap: 2px; line-height: 1;
+    }
+    .kpi-new  { font-size: 24px; font-weight: 300; color: var(--title); }
+    .kpi-item.kpi-urgent   .kpi-new { color: var(--urgent); }
+    .kpi-item.kpi-decision .kpi-new { color: #e07b00; }
+    .kpi-item.kpi-auto     .kpi-new { color: var(--positive); }
+    .kpi-sep   { font-size: 16px; font-weight: 300; color: var(--border-mid); margin: 0 1px; }
+    .kpi-total { font-size: 16px; font-weight: 300; color: var(--label); }
+    .kpi-since { font-size: 10px; color: var(--label); white-space: nowrap; }
+    .kpi-since strong { color: var(--title); font-weight: 600; }
+
+    /* ── Command strip — trend + time-saved chips ─────────────── */
+    .cmd-strip {
+      display: flex; align-items: stretch; gap: 0;
+      background: #fff;
+      border-left: 2px solid var(--border);
+      margin-left: auto;
+    }
+    .cmd-chip {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 12px 20px;
+      border-right: 1px solid var(--border-mid);
+      gap: 3px; white-space: nowrap;
+    }
+    .cmd-chip-label {
+      font-size: 11px; font-weight: 600; color: var(--label);
+      text-transform: uppercase; letter-spacing: .4px;
+    }
+    .cmd-chip-value {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .cmd-chip-num {
+      font-size: 22px; font-weight: 300; line-height: 1;
+    }
+    .cmd-chip-num.warn  { color: var(--urgent); }
+    .cmd-chip-num.ok    { color: var(--positive); }
+    .cmd-chip-sub {
+      font-size: 10px; color: var(--label); margin-top: 1px;
+    }
+    .cmd-spark {
+      display: flex; align-items: flex-end; gap: 2px; height: 22px;
+    }
+    .cmd-spark-bar {
+      width: 5px; border-radius: 2px 2px 0 0;
+      background: #d0e8ff;
+    }
+    .cmd-spark-bar.hi { background: var(--urgent); }
+
+    /* ── Content Area ─────────────────────────────────────────── */
+    .content-area {
+      flex: 1; min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 32px;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    /* ── Exception Cards — simplified ───────────────────────── */
+    .exc-list { display: flex; flex-direction: column; gap: 0; }
+
+    .exc-card {
+      background: #fff;
+      border: 1px solid var(--border-mid);
+      border-left: 4px solid transparent;
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      transition: box-shadow .15s;
+      overflow: hidden;
+      padding: 14px 16px 12px 14px;
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+    .exc-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .exc-card.dismissed { opacity: 0.4; pointer-events: none; }
+    .exc-card.urgent-card { border-left-color: var(--urgent); }
+    .exc-card.high-card   { border-left-color: var(--high); }
+    .exc-card.info-card   { border-left-color: var(--info); }
+
+    /* Badge column */
+    .exc-badge-col {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 8px; flex-shrink: 0; padding-top: 2px; min-width: 52px;
+    }
+    .exc-badge {
+      font-size: 11px; font-weight: 700; padding: 2px 8px;
+      border-radius: 10px; white-space: nowrap; text-align: center;
+    }
+    .badge-urgent { background: #fff2f2; color: var(--urgent); }
+    .badge-high   { background: #fff4ec; color: var(--high); }
+    .badge-info   { background: var(--info-bg); color: var(--info); }
+    .badge-done   { background: #e8f7ee !important; color: var(--positive) !important; }
+    .badge-auto   { background: #e8f7ee; color: var(--positive); }
+    .exc-card.auto-card { border-left-color: var(--positive); opacity: 0.85; }
+
+    /* ── Resolve animation ───────────────────────────────────── */
+    @keyframes resolveOut {
+      0%   { opacity: 1; transform: translateY(0) scale(1); max-height: 200px; }
+      40%  { opacity: 0.6; transform: translateY(-6px) scale(0.98); }
+      70%  { opacity: 0; transform: translateY(0) scale(0.96); max-height: 200px; }
+      100% { opacity: 0; transform: translateY(0); max-height: 0; margin: 0; padding: 0; }
+    }
+    .exc-card.resolving {
+      animation: resolveOut 0.55s ease forwards;
+      pointer-events: none; overflow: hidden;
+    }
+    @keyframes resolveIn {
+      0%   { opacity: 0; transform: translateY(12px) scale(0.97); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .exc-card.resolve-in {
+      animation: resolveIn 0.4s ease forwards;
+    }
+    .exc-conf {
+      font-size: 10px; color: var(--label); text-align: center;
+      line-height: 1.2;
+    }
+    .exc-type-tag {
+      font-size: 10px; font-weight: 600; color: var(--label);
+      text-transform: uppercase; letter-spacing: .04em; text-align: center;
+    }
+
+    /* Card body */
+    .exc-card-body { flex: 1; min-width: 0; }
+    .exc-title {
+      font-size: 14px; font-weight: 700; color: var(--title);
+      line-height: 1.35; margin-bottom: 8px;
+    }
+
+    /* Signal chips */
+    .exc-signals {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;
+    }
+    .sig-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11.5px; padding: 3px 9px; border-radius: 12px;
+      border: 1px solid var(--border); background: #f9fafb; color: var(--title);
+    }
+    .sig-chip-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .04em; color: var(--label);
+    }
+    .sig-chip.cost { background: #fff2f2; border-color: #f5c0c0; color: var(--urgent); font-weight: 700; }
+    .sig-chip.ok   { background: #f0faf4; border-color: #b8dfc7; color: var(--positive); }
+    .sig-chip.warn { background: #fff8f0; border-color: #f5d9b8; color: var(--high); font-weight: 700; }
+    .sig-chip.neutral { background: #f5f6f7; border-color: var(--border); color: var(--title); }
+
+    /* Compact erosion trail pill */
+    .exc-erosion-inline {
+      display: inline-flex; align-items: center; gap: 3px;
+      background: #f5f6f7; border: 1px solid var(--border);
+      border-radius: 12px; padding: 3px 10px;
+      font-size: 12px; color: var(--title);
+      margin-bottom: 8px;
+    }
+    .er-step { font-weight: 700; }
+    .er-step.crit { color: var(--urgent); }
+    .er-arrow { color: #bcc9d4; margin: 0 1px; }
+    .er-label { font-size: 10px; color: var(--label); margin-right: 4px; font-weight: 600; text-transform: uppercase; }
+
+    /* OC mini-table */
+    .exc-table-wrap { overflow-x: auto; margin: 6px 0 8px; }
+    .exc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .exc-table th {
+      text-align: left; padding: 4px 10px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--label);
+      border-bottom: 1px solid var(--border); background: #f5f6f7;
+    }
+    .exc-table td {
+      padding: 5px 10px; border-bottom: 1px solid var(--border);
+      color: var(--title); vertical-align: middle;
+    }
+    .cell-warn { color: var(--urgent); font-weight: 700; }
+    .cell-ok   { color: var(--positive); font-weight: 700; }
+    .badge-pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+    .pill-flag { background: #fff0e6; color: var(--urgent); }
+    .pill-ok   { background: #e8f7ee; color: var(--positive); }
+
+    /* Meta row */
+    .exc-meta-row {
+      display: flex; align-items: center; gap: 6px;
+      flex-wrap: wrap;
+    }
+    .exc-meta-pill { font-size: 11px; color: var(--label); }
+    .exc-meta-sep  { color: var(--border-mid); font-size: 11px; }
+
+    /* Action column */
+    .exc-card-actions {
+      display: flex; flex-direction: column; gap: 6px;
+      flex-shrink: 0; align-items: stretch;
+      min-width: 148px; padding-top: 2px;
+    }
+    .exc-btn-cta {
+      width: 100%; height: 32px; font-size: 13px; font-family: inherit;
+      font-weight: 600; border-radius: var(--radius-sm);
+      cursor: pointer; white-space: nowrap;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #0064d9; border: 1px solid #0064d9; color: #fff;
+    }
+    .exc-btn-cta:hover { background: #0057c2; }
+    .exc-btn-cta.accepted { background: var(--positive); border-color: var(--positive); }
+    .exc-card-sec-actions { display: flex; gap: 6px; }
+    .exc-btn-modify {
+      flex: 1; font-size: 12px; font-family: inherit;
+      padding: 0 8px; height: 26px; border-radius: var(--radius-sm);
+      cursor: pointer; white-space: nowrap;
+      display: inline-flex; align-items: center; justify-content: center;
+      text-decoration: none;
+      background: #fff; border: 1px solid var(--border-mid); color: var(--title);
+    }
+    .exc-btn-modify:hover { background: #f5f6f7; }
+    .exc-btn-dismiss {
+      font-size: 12px; font-family: inherit;
+      padding: 0 6px; height: 26px; border-radius: var(--radius-sm);
+      cursor: pointer; white-space: nowrap;
+      display: inline-flex; align-items: center;
+      background: transparent; border: none; color: var(--label);
+    }
+    .exc-btn-dismiss:hover { color: var(--title); text-decoration: underline; }
+    .exc-rule-link {
+      font-size: 11px; font-weight: 600; color: var(--aera, #6b3fa0);
+      text-decoration: none; padding: 0 6px; height: 26px;
+      display: inline-flex; align-items: center; border-radius: var(--radius-sm);
+      white-space: nowrap;
+    }
+    .exc-rule-link:hover { text-decoration: underline; background: var(--aera-bg, #f4effa); }
+
+    /* ── filter-select ────────────────────────────────────────── */
+    .filter-select {
+      font-size: 12px; font-family: inherit; color: var(--label);
+      border: 1px solid var(--border-mid); border-radius: var(--radius-sm);
+      background: #fff; padding: 0 8px; height: 28px; cursor: pointer;
+    }
+
+    /* ── Agent Situation Banner ───────────────────────────────── */
+    .agent-banner {
+      background: var(--ai-blue-bg);
+      border: 1px solid var(--ai-blue-bd);
+      border-left: 3px solid var(--ai-blue);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex; gap: 12px; align-items: flex-start;
+      flex-shrink: 0;
+    }
+    .agent-banner.hidden { display: none; }
+    .agent-banner-icon {
+      font-size: 18px; flex-shrink: 0; margin-top: 1px;
+      color: var(--ai-blue);
+    }
+    .agent-banner-body { flex: 1; }
+    .agent-banner-label {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--ai-blue); margin-bottom: 5px;
+    }
+    .agent-banner-text {
+      font-size: 13.5px; color: var(--title); line-height: 1.55;
+    }
+    .agent-banner-text strong { color: var(--title); }
+    .agent-banner-actions {
+      display: flex; gap: 8px; margin-top: 10px;
+    }
+    .agent-banner-dismiss {
+      background: none; border: none; cursor: pointer;
+      color: var(--label); font-size: 18px; padding: 0 4px;
+      flex-shrink: 0; margin-top: -2px;
+      line-height: 1;
+    }
+    .agent-banner-dismiss:hover { color: var(--title); }
+
+    /* ── List toolbar ─────────────────────────────────────────── */
+    .list-toolbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 0 12px 0; flex-wrap: wrap;
+    }
+    .list-title { font-size: 14px; font-weight: 700; color: var(--title); flex: 1; }
+    .list-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #e8edf1; color: var(--label); border-radius: 10px;
+      font-size: 11px; font-weight: 700; padding: 1px 7px; margin-left: 6px;
+    }
+    .toolbar-filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .filter-showing {
+      font-size: 12px; color: var(--label); margin-left: 4px; white-space: nowrap;
+    }
+    .filter-showing strong { color: var(--title); font-weight: 600; }
+
+    /* (analytics-strip removed — merged into cmd-strip inside .kpi-bar) */
+    .ai-filter-btn {
+      width: 28px; height: 28px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border-mid); background: #fff;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--label);
+      transition: background .12s, color .12s, border-color .12s;
+    }
+    .ai-filter-btn:hover { background: var(--ai-blue-bg); color: var(--ai-blue); border-color: var(--ai-blue-bd); }
+    .ai-filter-btn.active { background: var(--ai-blue-bg); color: var(--ai-blue); border-color: var(--ai-blue); }
+
+    .nl-filter-bar {
+      display: none; align-items: center; gap: 0; flex: 1;
+    }
+    .nl-filter-bar.visible { display: flex; }
+    .toolbar-dropdowns { display: flex; gap: 8px; align-items: center; }
+    .toolbar-dropdowns.hidden { display: none; }
+
+    .nl-input-wrap {
+      flex: 1; display: flex; align-items: center; gap: 6px;
+      background: var(--ai-blue-bg);
+      border: 1px solid var(--ai-blue-bd);
+      border-radius: var(--radius-sm);
+      padding: 0 10px; height: 28px;
+      min-width: 0;
+    }
+    .nl-input-wrap:focus-within {
+      border-color: var(--ai-blue);
+      box-shadow: 0 0 0 2px rgba(0,100,217,.12);
+    }
+    .nl-input-wrap .nl-star {
+      color: var(--ai-blue); font-size: 13px; flex-shrink: 0;
+    }
+    .nl-input {
+      flex: 1; border: none; background: transparent; outline: none;
+      font-family: inherit; font-size: 13px; color: var(--title);
+      min-width: 0;
+    }
+    .nl-input::placeholder { color: #90a4b7; font-style: italic; }
+    .nl-chips {
+      display: flex; gap: 4px; flex-shrink: 0; flex-wrap: nowrap;
+    }
+    .nl-chip {
+      display: inline-flex; align-items: center; gap: 3px;
+      background: #fff; border: 1px solid var(--ai-blue-bd);
+      border-radius: 10px; padding: 1px 7px;
+      font-size: 11px; font-weight: 600; color: var(--ai-blue);
+      white-space: nowrap;
+    }
+    .nl-chip-x {
+      cursor: pointer; opacity: 0.55; font-size: 11px; line-height: 1;
+    }
+    .nl-chip-x:hover { opacity: 1; }
+    .nl-clear-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--label); font-size: 14px; padding: 0; line-height: 1;
+      flex-shrink: 0; display: none;
+    }
+    .nl-clear-btn.visible { display: block; }
+    .nl-clear-btn:hover { color: var(--title); }
+
+    .nl-suggestions {
+      position: absolute; top: calc(100% + 4px); left: 0; z-index: 200;
+      background: #fff; border: 1px solid var(--border-mid);
+      border-radius: var(--radius); box-shadow: 0 4px 16px rgba(0,0,0,.1);
+      padding: 6px 0; min-width: 240px;
+      display: none;
+    }
+    .nl-suggestions.visible { display: block; }
+    .nl-sug-item {
+      padding: 7px 14px; cursor: pointer; font-size: 13px; color: var(--title);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .nl-sug-item:hover { background: var(--ai-blue-bg); }
+    .nl-sug-icon { color: var(--ai-blue); font-size: 12px; flex-shrink: 0; }
+    .nl-sug-desc { font-size: 11px; color: var(--label); margin-left: auto; }
+
+    .nl-thinking {
+      display: none; align-items: center; gap: 3px; flex-shrink: 0;
+    }
+    .nl-thinking.visible { display: flex; }
+    @keyframes nlDot { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+    .nl-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--ai-blue); display: inline-block; animation: nlDot 1.2s infinite; }
+    .nl-dot:nth-child(2) { animation-delay: .2s; }
+    .nl-dot:nth-child(3) { animation-delay: .4s; }
+    .view-toggle {
+      display: flex; align-items: center; gap: 0;
+      border: 1px solid var(--border-mid); border-radius: var(--radius-sm);
+      overflow: hidden; flex-shrink: 0; margin-left: 8px;
+    }
+    .view-toggle-btn {
+      background: #fff; border: none; cursor: pointer;
+      padding: 0 10px; height: 28px;
+      display: flex; align-items: center; gap: 5px;
+      font-size: 12px; color: var(--label);
+      font-family: inherit;
+      border-right: 1px solid var(--border-mid);
+      transition: background .12s, color .12s;
+    }
+    .view-toggle-btn:last-child { border-right: none; }
+    .view-toggle-btn:hover { background: #f5f6f7; }
+    .view-toggle-btn.active { background: var(--brand); color: #fff; }
+
+    /* ── Table view ───────────────────────────────────────────── */
+    .exc-table-view { display: none; }
+    .exc-table-view.visible { display: block; }
+    .exc-list.hidden { display: none; }
+
+    .tbl-view {
+      width: 100%; border-collapse: collapse;
+      font-size: 13px;
+      background: #fff;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .tbl-view thead th {
+      background: #f5f6f7;
+      border-bottom: 1px solid var(--border-mid);
+      padding: 9px 12px;
+      text-align: left;
+      font-size: 11px; font-weight: 700;
+      color: var(--label);
+      text-transform: uppercase; letter-spacing: .4px;
+      white-space: nowrap;
+      position: sticky; top: 0; z-index: 1;
+    }
+    .tbl-view thead th:first-child { width: 90px; }
+    .tbl-view tbody tr {
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background .1s;
+    }
+    .tbl-view tbody tr:last-child { border-bottom: none; }
+    .tbl-view tbody tr:hover { background: #f8f9fa; }
+    .tbl-view tbody tr.tbl-row-resolved { opacity: 0.7; }
+    .tbl-view tbody tr.tbl-row-hidden {
+      display: none;
+    }
+    .tbl-view td {
+      padding: 9px 12px; vertical-align: middle;
+    }
+    .tbl-priority-col { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+    .tbl-type { font-size: 10px; font-weight: 600; color: var(--label); }
+    .tbl-conf { font-size: 10px; color: var(--label); }
+    .tbl-title { font-weight: 500; color: var(--title); line-height: 1.35; }
+    .tbl-meta  { font-size: 11px; color: var(--label); margin-top: 2px; }
+    .tbl-cost  { font-weight: 600; color: var(--urgent); white-space: nowrap; }
+    .tbl-cost.ok { color: var(--positive); }
+    .tbl-date  { font-size: 12px; color: var(--label); white-space: nowrap; }
+    .tbl-action-btn {
+      font-size: 12px; padding: 4px 10px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border-mid); background: #fff;
+      cursor: pointer; white-space: nowrap; color: var(--title);
+      font-family: inherit;
+    }
+    .tbl-action-btn:hover { background: #f5f6f7; }
+    .tbl-action-btn.primary { background: var(--title); color: #fff; border-color: var(--title); }
+    .tbl-action-btn.primary:hover { background: #2c3e50; }
+    .tbl-action-btn.done { background: #e8f7ee; color: var(--positive); border-color: #b8dfc7; cursor: default; }
+    .tbl-divider-row td {
+      background: #f5f6f7;
+      padding: 6px 12px;
+      font-size: 11px; font-weight: 700;
+      color: var(--positive);
+      text-transform: uppercase; letter-spacing: .4px;
+    }
+
+  </style>
+</head>
+<body data-page="scexceptions">
+
+<div id="bn-shell-root"></div>
+
+<div class="app-body">
+
+  <div id="bn-sidenav-root"></div>
+
+  <!-- ── Main ──────────────────────────────────────────── -->
+  <div class="main">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-row">
+        <div>
+          <div class="page-title">Exception Management</div>
+          <div class="page-subtitle">Last updated 2 minutes ago</div>
+        </div>
+        <div class="page-actions">
+          <a href="exception_rules_config.html" style="text-decoration:none;">
+            <button class="btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+              Configure Rules
+            </button>
+          </a>
+          <button class="btn btn-primary">
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-bar">
+        <div class="kpi-item kpi-urgent" onclick="filterBy('urgent')">
+          <div class="kpi-label">Urgent</div>
+          <div class="kpi-fraction">
+            <span class="kpi-new" id="kpiUrgentNew">2</span>
+            <span class="kpi-sep">/</span>
+            <span class="kpi-total" id="kpiUrgent">3</span>
+          </div>
+          <div class="kpi-since"><strong>2 new</strong> since last update</div>
+        </div>
+        <div class="kpi-item kpi-decision" onclick="filterBy('decision')">
+          <div class="kpi-label">Needs Decision</div>
+          <div class="kpi-fraction">
+            <span class="kpi-new" id="kpiDecisionNew">3</span>
+            <span class="kpi-sep">/</span>
+            <span class="kpi-total" id="kpiDecision">5</span>
+          </div>
+          <div class="kpi-since"><strong>3 new</strong> since last update</div>
+        </div>
+        <div class="kpi-item kpi-auto" onclick="filterBy('auto')">
+          <div class="kpi-label">Auto-Resolved</div>
+          <div class="kpi-fraction">
+            <span class="kpi-new" id="kpiAutoNew">4</span>
+            <span class="kpi-sep">/</span>
+            <span class="kpi-total" id="kpiAuto">22</span>
+          </div>
+          <div class="kpi-since"><strong>4 new</strong> since last update</div>
+        </div>
+        <div class="kpi-item kpi-all" onclick="filterBy('all')">
+          <div class="kpi-label">All Exceptions</div>
+          <div class="kpi-fraction">
+            <span class="kpi-new" id="kpiTotalNew">9</span>
+            <span class="kpi-sep">/</span>
+            <span class="kpi-total" id="kpiTotal">30</span>
+          </div>
+          <div class="kpi-since"><strong>9 new</strong> since last update</div>
+        </div>
+        <!-- ── Command Strip ───────────────────────────────────── -->
+        <div class="cmd-strip">
+          <div class="cmd-chip">
+            <span class="cmd-chip-label">Exception Trend</span>
+            <div class="cmd-chip-value">
+              <div class="cmd-spark" id="sparkbars" title="Mon–Sun · exceptions/day"></div>
+              <span class="cmd-chip-num warn">▲ 12%</span>
+            </div>
+            <span class="cmd-chip-sub">Forecast exceptions up 18% vs last week</span>
+          </div>
+          <div class="cmd-chip">
+            <span class="cmd-chip-label">Agent Time Saved</span>
+            <div class="cmd-chip-value">
+              <span class="cmd-chip-num ok">3.2</span>
+              <span style="font-size:12px;color:var(--label);">hrs today</span>
+            </div>
+            <span class="cmd-chip-sub">847 min this week · 22 auto-resolved</span>
+          </div>
+        </div><!-- /cmd-strip -->
+      </div><!-- /kpi-bar -->
+    </div><!-- /page-header -->
+
+    <!-- Content Area -->
+    <div class="content-area">
+
+      <!-- Exception List — cards -->
+      <div class="list-toolbar">
+        <span class="list-title">Exception Inbox <span class="list-count" id="inboxCount">9</span></span>
+        <div class="toolbar-filters">
+          <!-- AI filter button — fixed position, never moves -->
+          <button class="ai-filter-btn" id="aiFilterBtn" onclick="toggleAiFilter()" title="Filter with AI">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 0.5C8.27 0.5 8.5 0.73 8.5 1L8.5 2.06C9.97 2.28 11.16 3.23 11.71 4.5H14.5C14.78 4.5 15 4.72 15 5C15 5.28 14.78 5.5 14.5 5.5H11.95C12 5.82 12 6.16 11.95 6.5H14.5C14.78 6.5 15 6.72 15 7C15 7.28 14.78 7.5 14.5 7.5H11.71C11.16 8.77 9.97 9.72 8.5 9.94V11C8.5 11.27 8.27 11.5 8 11.5C7.73 11.5 7.5 11.27 7.5 11V9.94C6.03 9.72 4.84 8.77 4.29 7.5H1.5C1.22 7.5 1 7.28 1 7C1 6.72 1.22 6.5 1.5 6.5H4.05C4 6.16 4 5.82 4.05 5.5H1.5C1.22 5.5 1 5.28 1 5C1 4.72 1.22 4.5 1.5 4.5H4.29C4.84 3.23 6.03 2.28 7.5 2.06V1C7.5 0.73 7.73 0.5 8 0.5ZM8 3C6.34 3 5 4.34 5 6C5 7.66 6.34 9 8 9C9.66 9 11 7.66 11 6C11 4.34 9.66 3 8 3ZM8 4.5C8.83 4.5 9.5 5.17 9.5 6C9.5 6.83 8.83 7.5 8 7.5C7.17 7.5 6.5 6.83 6.5 6C6.5 5.17 7.17 4.5 8 4.5ZM3 12C3.46 12 3.87 12.26 4.06 12.67L4.38 13.38L5.09 13.7C5.5 13.89 5.5 14.5 5.09 14.69L4.38 15.01L4.06 15.72C3.87 16.13 3.27 16.13 3.08 15.72L2.76 15.01L2.05 14.69C1.64 14.5 1.64 13.9 2.05 13.7L2.76 13.38L3.08 12.67C3.13 12.26 3.54 12 4 12ZM12.5 12C12.96 12 13.37 12.26 13.56 12.67L13.88 13.38L14.59 13.7C15 13.89 15 14.5 14.59 14.69L13.88 15.01L13.56 15.72C13.37 16.13 12.77 16.13 12.58 15.72L12.26 15.01L11.55 14.69C11.14 14.5 11.14 13.9 11.55 13.7L12.26 13.38L12.58 12.67C12.63 12.26 13.04 12 13.5 12Z" fill="currentColor"/></svg>
+          </button>
+
+          <!-- Dropdown filters (default) — replaced by NL bar on AI toggle -->
+          <div class="toolbar-dropdowns" id="toolbarDropdowns">
+            <select class="filter-select" id="filterType" onchange="applyFilters()">
+              <option value="all">All Types</option>
+              <option value="Forecast">Forecast</option>
+              <option value="OC">Order Confirmation</option>
+              <option value="ASN">ASN</option>
+              <option value="Quality">Quality</option>
+            </select>
+            <select class="filter-select" id="filterSupplier" onchange="applyFilters()">
+              <option value="all">All Suppliers</option>
+              <option value="volterra">Volterra Components</option>
+              <option value="apex">Apex Precision</option>
+              <option value="global">Global Parts Ltd</option>
+              <option value="simco">Simco Electronics</option>
+              <option value="meridian">Meridian Fasteners</option>
+              <option value="crestline">Crestline Supply</option>
+              <option value="precision">Precision Metals</option>
+            </select>
+            <select class="filter-select" id="filterPriority" onchange="applyFilters()">
+              <option value="all">All Priorities</option>
+              <option value="urgent">Urgent</option>
+              <option value="high">High</option>
+              <option value="resolved">Resolved only</option>
+            </select>
+          </div>
+
+          <!-- NL filter bar — replaces the 3 dropdowns in the same slot -->
+          <div class="nl-filter-bar" id="nlFilterBar" style="position:relative;">
+            <div class="nl-input-wrap">
+              <span class="nl-star">✦</span>
+              <input class="nl-input" id="nlInput" placeholder="e.g. urgent Forecast from Volterra…"
+                oninput="onNlInput()" onkeydown="onNlKey(event)" autocomplete="off" />
+              <div class="nl-chips" id="nlChips"></div>
+              <div class="nl-thinking" id="nlThinking">
+                <span class="nl-dot"></span><span class="nl-dot"></span><span class="nl-dot"></span>
+              </div>
+              <button class="nl-clear-btn" id="nlClearBtn" onclick="clearNlFilter()" title="Clear">✕</button>
+            </div>
+            <!-- Suggestions dropdown -->
+            <div class="nl-suggestions" id="nlSuggestions">
+              <div class="nl-sug-item" onclick="applySuggestion('urgent Forecast')">
+                <span class="nl-sug-icon">✦</span> urgent Forecast
+                <span class="nl-sug-desc">2 results</span>
+              </div>
+              <div class="nl-sug-item" onclick="applySuggestion('Volterra')">
+                <span class="nl-sug-icon">✦</span> Volterra
+                <span class="nl-sug-desc">3 results</span>
+              </div>
+              <div class="nl-sug-item" onclick="applySuggestion('unresolved urgent')">
+                <span class="nl-sug-icon">✦</span> unresolved urgent
+                <span class="nl-sug-desc">2 results</span>
+              </div>
+              <div class="nl-sug-item" onclick="applySuggestion('ASN overdue')">
+                <span class="nl-sug-icon">✦</span> ASN overdue
+                <span class="nl-sug-desc">1 result</span>
+              </div>
+              <div class="nl-sug-item" onclick="applySuggestion('auto-resolved today')">
+                <span class="nl-sug-icon">✦</span> auto-resolved today
+                <span class="nl-sug-desc">4 results</span>
+              </div>
+            </div>
+          </div>
+
+          <span class="filter-showing">Showing <strong id="filterShowCount">9</strong> of <strong>1,247</strong></span>
+          <div class="view-toggle" style="margin-left:auto;">
+            <button class="view-toggle-btn active" id="btnCardView" onclick="setView('card')" title="Card view">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor"/><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor"/></svg>
+              Cards
+            </button>
+            <button class="view-toggle-btn" id="btnTableView" onclick="setView('table')" title="Table view">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="3" rx="1" fill="currentColor"/><rect x="1" y="6" width="14" height="3" rx="1" fill="currentColor"/><rect x="1" y="11" width="14" height="3" rx="1" fill="currentColor"/></svg>
+              Table
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="exc-list" id="excList">
+
+        <!-- Card 1 — Forecast shortage (Urgent) -->
+        <div class="exc-card urgent-card" id="exc1" data-type="Forecast" data-supplier="volterra" data-priority="urgent">
+          <div class="exc-badge-col">
+            <span class="exc-badge badge-urgent" id="badge1">Urgent</span>
+            <span class="exc-type-tag">Forecast</span>
+            <span class="exc-conf">96%</span>
+          </div>
+          <div class="exc-card-body">
+            <div class="exc-title">Volterra Components shortage — Plant US01 (Chicago) at risk · Wks 4 &amp; 6</div>
+            <div class="exc-signals">
+              <span class="sig-chip cost"><span class="sig-chip-label">Cost</span>$1,255,930</span>
+              <span class="sig-chip warn"><span class="sig-chip-label">OC</span>60% commit · 12 parts</span>
+              <span class="sig-chip warn"><span class="sig-chip-label">ASN</span>45% shipped</span>
+              <span class="sig-chip neutral"><span class="sig-chip-label">Root cause</span>Raw material shortage · US01 line</span>
+            </div>
+            <div class="exc-erosion-inline">
+              <span class="er-label">Trail</span>
+              <span class="er-step">100%</span>
+              <span class="er-arrow">›</span>
+              <span class="er-step crit">60% OC</span>
+              <span class="er-arrow">›</span>
+              <span class="er-step crit">45% ASN</span>
+              <span style="font-size:11px;color:var(--label);margin-left:4px;">680→408→306 units/wk</span>
+            </div>
+            <div class="exc-meta-row">
+              <span class="exc-meta-pill">Volterra Components GmbH · #5000</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Plant US01 (Chicago)</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Mar 24, 2026</span>
+            </div>
+          </div>
+          <div class="exc-card-actions">
+            <button class="exc-btn-cta" id="cta1" onclick="acceptCard('exc1')">Accept &amp; Send</button>
+            <div class="exc-card-sec-actions">
+              <a class="exc-btn-modify" href="exception_detail.html?exc=1">Modify</a>
+              <button class="exc-btn-dismiss" onclick="dismissCard('exc1')">Dismiss</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 — Hard ship date breach (Urgent) -->
+        <div class="exc-card urgent-card" id="exc2" data-type="ASN" data-supplier="apex" data-priority="urgent">
+          <div class="exc-badge-col">
+            <span class="exc-badge badge-urgent" id="badge2">Urgent</span>
+            <span class="exc-type-tag">ASN</span>
+            <span class="exc-conf">99%</span>
+          </div>
+          <div class="exc-card-body">
+            <div class="exc-title">Apex Precision missed hard ship date — Apr 1 line stoppage risk</div>
+            <div class="exc-signals">
+              <span class="sig-chip cost"><span class="sig-chip-label">Cost</span>$843,200</span>
+              <span class="sig-chip warn"><span class="sig-chip-label">Overdue</span>Mar 24 deadline</span>
+              <span class="sig-chip warn"><span class="sig-chip-label">Units</span>520 not shipped</span>
+              <span class="sig-chip ok"><span class="sig-chip-label">Alt source</span>Meridian 14d lead</span>
+            </div>
+            <div class="exc-meta-row">
+              <span class="exc-meta-pill">Apex Precision</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Plant US03 (Austin)</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">PN AP-7732-X</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Mar 25, 2026</span>
+            </div>
+          </div>
+          <div class="exc-card-actions">
+            <button class="exc-btn-cta" id="cta2" onclick="acceptCard('exc2')">Send Expedite Request</button>
+            <div class="exc-card-sec-actions">
+              <a class="exc-btn-modify" href="exception_detail.html?exc=2">Modify</a>
+              <button class="exc-btn-dismiss" onclick="dismissCard('exc2')">Dismiss</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 — OC Deviations batch (High) -->
+        <div class="exc-card high-card" id="exc3" data-type="OC" data-supplier="volterra" data-priority="high">
+          <div class="exc-badge-col">
+            <span class="exc-badge badge-high" id="badge3">High</span>
+            <span class="exc-type-tag">OC</span>
+            <span class="exc-conf">94%</span>
+          </div>
+          <div class="exc-card-body">
+            <div class="exc-title">27 OC deviations from Volterra — 24 ready to batch-approve · 3 flagged</div>
+            <div class="exc-signals">
+              <span class="sig-chip ok"><span class="sig-chip-label">Batch-ready</span>24 in tolerance</span>
+              <span class="sig-chip warn"><span class="sig-chip-label">Flagged</span>3 POs (&minus;15%, &minus;20%, +10%)</span>
+              <span class="sig-chip warn"><span class="sig-chip-label">Oldest</span>14 days pending</span>
+            </div>
+            <div class="exc-table-wrap">
+              <table class="exc-table">
+                <thead><tr><th>PO</th><th>Ordered</th><th>Confirmed</th><th>Dev</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td>4500001010</td><td>500</td><td>425</td><td class="cell-warn">–15%</td><td><span class="badge-pill pill-flag">Flagged</span></td></tr>
+                  <tr><td>4500001011</td><td>300</td><td>240</td><td class="cell-warn">–20%</td><td><span class="badge-pill pill-flag">Flagged</span></td></tr>
+                  <tr><td>4500001012</td><td>200</td><td>220</td><td class="cell-ok">+10%</td><td><span class="badge-pill pill-flag">Flagged</span></td></tr>
+                  <tr><td colspan="4" style="color:#556b82;font-size:12px;">+ 24 in-tolerance deviations</td><td><span class="badge-pill pill-ok">In Tolerance</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="exc-meta-row">
+              <span class="exc-meta-pill">Volterra Components</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Plant US01</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Mar 24, 2026</span>
+            </div>
+          </div>
+          <div class="exc-card-actions">
+            <button class="exc-btn-cta" id="cta3" onclick="acceptCard('exc3')">Batch Approve 24</button>
+            <div class="exc-card-sec-actions">
+              <a class="exc-btn-modify" href="exception_detail.html?exc=3">Modify</a>
+              <button class="exc-btn-dismiss" onclick="dismissCard('exc3')">Dismiss</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4 — Quality hold Precision Metals (High) -->
+        <div class="exc-card high-card" id="exc4" data-type="Quality" data-supplier="precision" data-priority="high">
+          <div class="exc-badge-col">
+            <span class="exc-badge badge-high" id="badge4">High</span>
+            <span class="exc-type-tag">Quality</span>
+            <span class="exc-conf">93%</span>
+          </div>
+          <div class="exc-card-body">
+            <div class="exc-title">Precision Metals shipment on quality hold — 340 units blocked at Plant US01</div>
+            <div class="exc-signals">
+              <span class="sig-chip warn"><span class="sig-chip-label">On Hold</span>340 units · PO-4500001890</span>
+              <span class="sig-chip cost"><span class="sig-chip-label">Risk</span>Line delay if not cleared by Apr 2</span>
+              <span class="sig-chip neutral"><span class="sig-chip-label">Defect</span>Surface finish non-conformance</span>
+              <span class="sig-chip ok"><span class="sig-chip-label">Option</span>Conditional release available</span>
+            </div>
+            <div class="exc-meta-row">
+              <span class="exc-meta-pill">Precision Metals</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Plant US01 (Chicago)</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Mar 26, 2026</span>
+            </div>
+          </div>
+          <div class="exc-card-actions">
+            <button class="exc-btn-cta" id="cta4" onclick="acceptCard('exc4')">Request Disposition</button>
+            <div class="exc-card-sec-actions">
+              <a class="exc-btn-modify" href="exception_detail.html">Modify</a>
+              <button class="exc-btn-dismiss" onclick="dismissCard('exc4')">Dismiss</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5 — Forecast Plant US02 (High, monitoring) -->
+        <div class="exc-card high-card" id="exc5" data-type="Forecast" data-supplier="volterra" data-priority="high">
+          <div class="exc-badge-col">
+            <span class="exc-badge badge-high" id="badge5">High</span>
+            <span class="exc-type-tag">Forecast</span>
+            <span class="exc-conf">91%</span>
+          </div>
+          <div class="exc-card-body">
+            <div class="exc-title">Plant US02 at 80% commit · Wk 6 — flex capacity for US01 shortfall</div>
+            <div class="exc-signals">
+              <span class="sig-chip warn"><span class="sig-chip-label">Commit</span>80% · Wk 6 · above 75% threshold</span>
+              <span class="sig-chip ok"><span class="sig-chip-label">Flex</span>No OC deviations · ASN on track</span>
+              <span class="sig-chip ok"><span class="sig-chip-label">Offset</span>Available for inter-plant transfer</span>
+            </div>
+            <div class="exc-meta-row">
+              <span class="exc-meta-pill">Volterra Components GmbH · #5000</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Plant US02 (Dallas)</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Mar 24, 2026</span>
+            </div>
+          </div>
+          <div class="exc-card-actions">
+            <button class="exc-btn-cta" id="cta5" onclick="acceptCard('exc5')">Acknowledge</button>
+            <div class="exc-card-sec-actions">
+              <a class="exc-btn-modify" href="exception_detail.html">Modify</a>
+              <button class="exc-btn-dismiss" onclick="dismissCard('exc5')">Dismiss</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section divider — Auto-resolved -->
+        <div id="auto-resolved-divider" style="display:flex;align-items:center;gap:10px;padding:8px 0 4px;color:var(--positive);font-size:12px;font-weight:600;">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#256f3a" stroke-width="1.5"/><path d="M5 8l2.5 2.5L11 5.5" stroke="#256f3a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          RESOLVED TODAY (<span id="auto-resolved-count">4</span>) — No action needed
+          <div style="flex:1;height:1px;background:#b8dfc7;"></div>
+        </div>
+
+        <!-- Card 6 — AUTO-RESOLVED: OC in-tolerance batch, Global Parts -->
+        <div class="exc-card auto-card" id="exc6" data-type="OC" data-supplier="global" data-priority="resolved">
+          <div class="exc-badge-col">
+            <span class="exc-badge badge-auto" id="badge6">Auto-resolved</span>
+            <span class="exc-type-tag">OC</span>
+            <span class="exc-conf">96%</span>
+          </div>
+          <div class="exc-card-body">
+            <div class="exc-title">6 OC deviations auto-approved — Global Parts, all within ±4% tolerance</div>
+            <div class="exc-signals">
+              <span class="sig-chip ok"><span class="sig-chip-label">Rule</span>In-tolerance auto-approve</span>
+              <span class="sig-chip ok"><span class="sig-chip-label">Saved</span>~25 min · Mar 27, 09:14</span>
+              <span class="sig-chip neutral"><span class="sig-chip-label">POs</span>4500002003–2008</span>
+            </div>
+            <div class="exc-meta-row">
+              <span class="exc-meta-pill">Global Parts Ltd · #5021</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Plant US01</span>
+            </div>
+          </div>
+          <div class="exc-card-actions">
+            <button class="exc-btn-cta" id="cta6" onclick="viewResolution('exc6')">View Resolution</button>
+            <div class="exc-card-sec-actions">
+              <a href="exception_rules_config.html#skill-oc" class="exc-rule-link">View rule →</a>
+              <button class="exc-btn-dismiss" onclick="undoResolution('exc6')">Undo</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 7 — AUTO-RESOLVED: ASN overdue alert sent, Simco -->
+        <div class="exc-card auto-card" id="exc7" data-type="ASN" data-supplier="simco" data-priority="resolved">
+          <div class="exc-badge-col">
+            <span class="exc-badge badge-auto" id="badge7">Auto-resolved</span>
+            <span class="exc-type-tag">ASN</span>
+            <span class="exc-conf">91%</span>
+          </div>
+          <div class="exc-card-body">
+            <div class="exc-title">2 Simco ASNs 1 day overdue — expedite alert auto-sent, low risk</div>
+            <div class="exc-signals">
+              <span class="sig-chip ok"><span class="sig-chip-label">Action</span>Alert sent 08:14</span>
+              <span class="sig-chip ok"><span class="sig-chip-label">Risk</span>Low · 92% on-time history</span>
+              <span class="sig-chip neutral"><span class="sig-chip-label">Units</span>430 · PO-4500003021–3022</span>
+            </div>
+            <div class="exc-meta-row">
+              <span class="exc-meta-pill">Simco Electronics · #5033</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Plant US04</span>
+            </div>
+          </div>
+          <div class="exc-card-actions">
+            <button class="exc-btn-cta" id="cta7" onclick="viewResolution('exc7')">View Resolution</button>
+            <div class="exc-card-sec-actions">
+              <a href="exception_rules_config.html#skill-asn" class="exc-rule-link">View rule →</a>
+              <button class="exc-btn-dismiss" onclick="undoResolution('exc7')">Undo</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 8 — AUTO-RESOLVED: Forecast minor gap, Meridian Fasteners -->
+        <div class="exc-card auto-card" id="exc8" data-type="Forecast" data-supplier="meridian" data-priority="resolved">
+          <div class="exc-badge-col">
+            <span class="exc-badge badge-auto" id="badge8">Auto-resolved</span>
+            <span class="exc-type-tag">Forecast</span>
+            <span class="exc-conf">93%</span>
+          </div>
+          <div class="exc-card-body">
+            <div class="exc-title">Forecast gap resolved via safety stock — Meridian Fasteners, Wk 5 shortfall covered</div>
+            <div class="exc-signals">
+              <span class="sig-chip ok"><span class="sig-chip-label">Rule</span>Safety stock coverage</span>
+              <span class="sig-chip ok"><span class="sig-chip-label">Saved</span>~18 min · Mar 27, 07:52</span>
+              <span class="sig-chip neutral"><span class="sig-chip-label">Gap</span>40 units · Wk 5</span>
+            </div>
+            <div class="exc-meta-row">
+              <span class="exc-meta-pill">Meridian Fasteners · #5041</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Plant US02</span>
+            </div>
+          </div>
+          <div class="exc-card-actions">
+            <button class="exc-btn-cta" id="cta8" onclick="viewResolution('exc8')">View Resolution</button>
+            <div class="exc-card-sec-actions">
+              <a href="exception_rules_config.html#skill-forecast" class="exc-rule-link">View rule →</a>
+              <button class="exc-btn-dismiss" onclick="undoResolution('exc8')">Undo</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 9 — AUTO-RESOLVED: Duplicate OC deviation, Crestline -->
+        <div class="exc-card auto-card" id="exc9" data-type="OC" data-supplier="crestline" data-priority="resolved">
+          <div class="exc-badge-col">
+            <span class="exc-badge badge-auto" id="badge9">Auto-resolved</span>
+            <span class="exc-type-tag">OC</span>
+            <span class="exc-conf">98%</span>
+          </div>
+          <div class="exc-card-body">
+            <div class="exc-title">Duplicate OC deviation dismissed — Crestline Supply, re-submission identified by agent</div>
+            <div class="exc-signals">
+              <span class="sig-chip ok"><span class="sig-chip-label">Rule</span>Duplicate detection</span>
+              <span class="sig-chip ok"><span class="sig-chip-label">Saved</span>~12 min · Mar 26, 16:44</span>
+              <span class="sig-chip neutral"><span class="sig-chip-label">Ref</span>PO-4500004110</span>
+            </div>
+            <div class="exc-meta-row">
+              <span class="exc-meta-pill">Crestline Supply Co · #5057</span>
+              <span class="exc-meta-sep">·</span>
+              <span class="exc-meta-pill">Plant US03</span>
+            </div>
+          </div>
+          <div class="exc-card-actions">
+            <button class="exc-btn-cta" id="cta9" onclick="viewResolution('exc9')">View Resolution</button>
+            <div class="exc-card-sec-actions">
+              <a href="exception_rules_config.html#skill-oc" class="exc-rule-link">View rule →</a>
+              <button class="exc-btn-dismiss" onclick="undoResolution('exc9')">Undo</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /exc-list -->
+
+    <!-- TABLE VIEW (hidden by default) -->
+    <div class="exc-table-view" id="excTableView">
+      <table class="tbl-view" id="tblView">
+        <thead>
+          <tr>
+            <th>Priority</th>
+            <th>Exception</th>
+            <th>Supplier · Plant</th>
+            <th>Impact</th>
+            <th>Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Active exceptions -->
+          <tr class="tbl-row-active" data-type="Forecast" data-supplier="volterra" data-priority="urgent" data-id="exc1">
+            <td><div class="tbl-priority-col"><span class="exc-badge badge-urgent">Urgent</span><span class="tbl-type">Forecast</span><span class="tbl-conf">96%</span></div></td>
+            <td><div class="tbl-title">Volterra Components shortage — Plant US01 at risk · Wks 4 &amp; 6</div><div class="tbl-meta">Trail: 100% → 60% OC → 45% ASN · Raw material shortage</div></td>
+            <td><div class="tbl-meta">Volterra Components GmbH · #5000</div><div class="tbl-meta">Plant US01 (Chicago)</div></td>
+            <td><span class="tbl-cost">$1,255,930</span></td>
+            <td><span class="tbl-date">Mar 24</span></td>
+            <td><button class="tbl-action-btn primary" id="tblcta1" onclick="tblAccept('exc1','tblcta1')">Accept &amp; Send</button></td>
+          </tr>
+          <tr class="tbl-row-active" data-type="ASN" data-supplier="apex" data-priority="urgent" data-id="exc2">
+            <td><div class="tbl-priority-col"><span class="exc-badge badge-urgent">Urgent</span><span class="tbl-type">ASN</span><span class="tbl-conf">99%</span></div></td>
+            <td><div class="tbl-title">Apex Precision missed hard ship date — Apr 1 line stoppage risk</div><div class="tbl-meta">520 units not shipped · Overdue Mar 24 · Alt source: Meridian 14d</div></td>
+            <td><div class="tbl-meta">Apex Precision</div><div class="tbl-meta">Plant US03 (Austin)</div></td>
+            <td><span class="tbl-cost">$843,200</span></td>
+            <td><span class="tbl-date">Mar 25</span></td>
+            <td><button class="tbl-action-btn primary" id="tblcta2" onclick="tblAccept('exc2','tblcta2')">Expedite Request</button></td>
+          </tr>
+          <tr class="tbl-row-active" data-type="OC" data-supplier="volterra" data-priority="high" data-id="exc3">
+            <td><div class="tbl-priority-col"><span class="exc-badge badge-high">High</span><span class="tbl-type">OC</span><span class="tbl-conf">94%</span></div></td>
+            <td><div class="tbl-title">27 OC deviations from Volterra — 24 batch-ready · 3 flagged</div><div class="tbl-meta">Flagged: –15%, –20%, +10% · Oldest 14 days pending</div></td>
+            <td><div class="tbl-meta">Volterra Components</div><div class="tbl-meta">Plant US01</div></td>
+            <td><span class="tbl-cost" style="color:var(--high);">27 POs</span></td>
+            <td><span class="tbl-date">Mar 24</span></td>
+            <td><button class="tbl-action-btn primary" id="tblcta3" onclick="tblAccept('exc3','tblcta3')">Batch Approve 24</button></td>
+          </tr>
+          <tr class="tbl-row-active" data-type="Quality" data-supplier="precision" data-priority="high" data-id="exc4">
+            <td><div class="tbl-priority-col"><span class="exc-badge badge-high">High</span><span class="tbl-type">Quality</span><span class="tbl-conf">93%</span></div></td>
+            <td><div class="tbl-title">Precision Metals on quality hold — 340 units blocked at Plant US01</div><div class="tbl-meta">Surface finish non-conformance · Line risk if not cleared by Apr 2</div></td>
+            <td><div class="tbl-meta">Precision Metals</div><div class="tbl-meta">Plant US01 (Chicago)</div></td>
+            <td><span class="tbl-cost" style="color:var(--high);">340 units</span></td>
+            <td><span class="tbl-date">Mar 26</span></td>
+            <td><button class="tbl-action-btn primary" id="tblcta4" onclick="tblAccept('exc4','tblcta4')">Request Disposition</button></td>
+          </tr>
+          <tr class="tbl-row-active" data-type="Forecast" data-supplier="volterra" data-priority="high" data-id="exc5">
+            <td><div class="tbl-priority-col"><span class="exc-badge badge-high">High</span><span class="tbl-type">Forecast</span><span class="tbl-conf">91%</span></div></td>
+            <td><div class="tbl-title">Plant US02 at 80% commit · Wk 6 — flex capacity for US01 shortfall</div><div class="tbl-meta">No OC deviations · ASN on track · Available for inter-plant transfer</div></td>
+            <td><div class="tbl-meta">Volterra Components GmbH · #5000</div><div class="tbl-meta">Plant US02 (Dallas)</div></td>
+            <td><span class="tbl-cost ok">Monitor</span></td>
+            <td><span class="tbl-date">Mar 24</span></td>
+            <td><button class="tbl-action-btn primary" id="tblcta5" onclick="tblAccept('exc5','tblcta5')">Acknowledge</button></td>
+          </tr>
+          <!-- Divider row -->
+          <tr class="tbl-divider-row" id="tbl-resolved-divider">
+            <td colspan="6">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:6px;"><circle cx="8" cy="8" r="7" stroke="#256f3a" stroke-width="1.5"/><path d="M5 8l2.5 2.5L11 5.5" stroke="#256f3a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              RESOLVED TODAY (<span id="tbl-resolved-count">4</span>) — No action needed
+            </td>
+          </tr>
+          <!-- Auto-resolved rows -->
+          <tr class="tbl-row-resolved" data-type="OC" data-supplier="global" data-priority="resolved">
+            <td><div class="tbl-priority-col"><span class="exc-badge badge-auto">Auto-resolved</span><span class="tbl-type">OC</span><span class="tbl-conf">96%</span></div></td>
+            <td><div class="tbl-title">6 OC deviations auto-approved — Global Parts, all within ±4%</div><div class="tbl-meta">Rule: In-tolerance auto-approve · Saved ~25 min</div></td>
+            <td><div class="tbl-meta">Global Parts Ltd · #5021</div><div class="tbl-meta">Plant US01</div></td>
+            <td><span class="tbl-cost ok">—</span></td>
+            <td><span class="tbl-date">09:14</span></td>
+            <td><button class="tbl-action-btn done">✓ Auto-resolved</button></td>
+          </tr>
+          <tr class="tbl-row-resolved" data-type="ASN" data-supplier="simco" data-priority="resolved">
+            <td><div class="tbl-priority-col"><span class="exc-badge badge-auto">Auto-resolved</span><span class="tbl-type">ASN</span><span class="tbl-conf">91%</span></div></td>
+            <td><div class="tbl-title">2 Simco ASNs 1 day overdue — expedite alert auto-sent, low risk</div><div class="tbl-meta">92% on-time history · 430 units · PO-4500003021–3022</div></td>
+            <td><div class="tbl-meta">Simco Electronics · #5033</div><div class="tbl-meta">Plant US04</div></td>
+            <td><span class="tbl-cost ok">—</span></td>
+            <td><span class="tbl-date">08:14</span></td>
+            <td><button class="tbl-action-btn done">✓ Auto-resolved</button></td>
+          </tr>
+          <tr class="tbl-row-resolved" data-type="Forecast" data-supplier="meridian" data-priority="resolved">
+            <td><div class="tbl-priority-col"><span class="exc-badge badge-auto">Auto-resolved</span><span class="tbl-type">Forecast</span><span class="tbl-conf">93%</span></div></td>
+            <td><div class="tbl-title">Forecast gap resolved via safety stock — Meridian Fasteners, Wk 5</div><div class="tbl-meta">Safety stock coverage · 40 units · Saved ~18 min</div></td>
+            <td><div class="tbl-meta">Meridian Fasteners · #5041</div><div class="tbl-meta">Plant US02</div></td>
+            <td><span class="tbl-cost ok">—</span></td>
+            <td><span class="tbl-date">07:52</span></td>
+            <td><button class="tbl-action-btn done">✓ Auto-resolved</button></td>
+          </tr>
+          <tr class="tbl-row-resolved" data-type="OC" data-supplier="crestline" data-priority="resolved">
+            <td><div class="tbl-priority-col"><span class="exc-badge badge-auto">Auto-resolved</span><span class="tbl-type">OC</span><span class="tbl-conf">98%</span></div></td>
+            <td><div class="tbl-title">Duplicate OC deviation dismissed — Crestline Supply re-submission</div><div class="tbl-meta">Duplicate detection rule · PO-4500004110 · Saved ~12 min</div></td>
+            <td><div class="tbl-meta">Crestline Supply Co · #5057</div><div class="tbl-meta">Plant US03</div></td>
+            <td><span class="tbl-cost ok">—</span></td>
+            <td><span class="tbl-date">Mar 26</span></td>
+            <td><button class="tbl-action-btn done">✓ Auto-resolved</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div><!-- /exc-table-view -->
+    </div><!-- /content-area -->
+  </div><!-- /main -->
+</div><!-- /app-body -->
+
+<script>
+  // KPI state — tracks counts for active (needs-decision) cards
+  var kpiState = {
+    urgent: 2,    // currently active urgent cards (exc1, exc2)
+    decision: 3,  // currently active needs-decision cards (exc3, exc4, exc5)
+    auto: 4       // auto-resolved count
+  };
+
+  // Priority of each active card: 'urgent' or 'decision'
+  var cardPriority = { exc1: 'urgent', exc2: 'urgent', exc3: 'decision', exc4: 'decision', exc5: 'decision' };
+
+  // Titles for resolved cards (to clone into the resolved section)
+  var cardLabels = {
+    exc1: { title: 'Forecast shortage accepted — Volterra · Plant US01', type: 'Forecast', conf: '94%' },
+    exc2: { title: 'Expedite request sent — Apex Precision · Plant US03', type: 'ASN', conf: '89%' },
+    exc3: { title: 'OC batch approved (24) — Volterra · Plant US01', type: 'OC', conf: '97%' },
+    exc4: { title: 'Quality hold disposition requested — Precision Metals · Plant US01', type: 'Quality', conf: '86%' },
+    exc5: { title: 'Monitor acknowledged — Volterra US02 Dallas', type: 'Forecast', conf: '82%' }
+  };
+
+  function updateKpi() {
+    var needsDecision = kpiState.decision;
+    document.getElementById('kpiUrgentNew').textContent = kpiState.urgent;
+    document.getElementById('kpiDecisionNew').textContent = needsDecision;
+    document.getElementById('kpiAutoNew').textContent = kpiState.auto;
+    document.getElementById('kpiTotalNew').textContent = kpiState.urgent + needsDecision + kpiState.auto;
+    document.getElementById('auto-resolved-count').textContent = kpiState.auto;
+  }
+
+  function acceptCard(id) {
+    var card = document.getElementById(id);
+    if (!card || card.classList.contains('resolving')) return;
+
+    // Update badge + button immediately
+    var n = id.replace('exc', '');
+    var badge = document.getElementById('badge' + n);
+    var actionsEl = card.querySelector('.exc-card-actions');
+
+    if (badge) { badge.className = 'exc-badge badge-auto'; badge.textContent = 'Resolved'; }
+    if (actionsEl) {
+      actionsEl.innerHTML =
+        '<button class="exc-btn-cta accepted" disabled>✓ Resolved</button>' +
+        '<div class="exc-card-sec-actions">' +
+        '<button class="exc-btn-dismiss" onclick="undoResolution(\'' + id + '\')">Undo</button>' +
+        '</div>';
+    }
+
+    // Update KPI counters
+    var priority = cardPriority[id] || 'decision';
+    if (priority === 'urgent') kpiState.urgent = Math.max(0, kpiState.urgent - 1);
+    else kpiState.decision = Math.max(0, kpiState.decision - 1);
+    kpiState.auto += 1;
+    updateKpi();
+
+    // Animate card out, then move it into resolved section
+    card.classList.add('resolving');
+    card.addEventListener('animationend', function onEnd() {
+      card.removeEventListener('animationend', onEnd);
+      card.classList.remove('resolving');
+
+      // Clone card as auto-resolved entry
+      var label = cardLabels[id] || { title: 'Exception resolved', type: 'OC', conf: '90%' };
+      var resolvedCard = document.createElement('div');
+      resolvedCard.className = 'exc-card auto-card resolve-in';
+      resolvedCard.id = id + '-resolved';
+      resolvedCard.innerHTML =
+        '<div class="exc-badge-col">' +
+          '<span class="exc-badge badge-auto">Resolved</span>' +
+          '<span class="exc-type-tag">' + label.type + '</span>' +
+          '<span class="exc-conf">' + label.conf + '</span>' +
+        '</div>' +
+        '<div class="exc-card-body">' +
+          '<div class="exc-title">' + label.title + '</div>' +
+          '<div class="exc-signals">' +
+            '<span class="sig-chip ok"><span class="sig-chip-label">Action</span>Accepted by you</span>' +
+            '<span class="sig-chip ok"><span class="sig-chip-label">Time</span>' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="exc-card-actions">' +
+          '<button class="exc-btn-cta" onclick="viewResolution(\'' + id + '-resolved\')">View Resolution</button>' +
+          '<div class="exc-card-sec-actions">' +
+            '<button class="exc-btn-dismiss" onclick="undoAccept(\'' + id + '\')">Undo</button>' +
+          '</div>' +
+        '</div>';
+
+      // Hide original, insert resolved card after the divider section
+      card.style.display = 'none';
+      var divider = document.getElementById('auto-resolved-divider');
+      divider.insertAdjacentElement('afterend', resolvedCard);
+    }, { once: true });
+  }
+
+  function dismissCard(id) {
+    var card = document.getElementById(id);
+    if (card) card.classList.add('dismissed');
+  }
+
+  function viewResolution(id) {
+    var card = document.getElementById(id);
+    if (!card) return;
+    var cta = card.querySelector('.exc-btn-cta');
+    if (cta) { cta.textContent = '✓ Viewed'; cta.classList.add('accepted'); cta.disabled = true; }
+  }
+
+  function undoResolution(id) {
+    var card = document.getElementById(id);
+    if (card) card.classList.add('dismissed');
+  }
+
+  function undoAccept(origId) {
+    var resolved = document.getElementById(origId + '-resolved');
+    var orig = document.getElementById(origId);
+    if (!resolved || !orig) return;
+
+    // Restore badge + actions on original card before showing it
+    var n = origId.replace('exc', '');
+    var badge = document.getElementById('badge' + n);
+    var ctaLabels = { exc1:'Accept &amp; Send', exc2:'Send Expedite Request', exc3:'Batch Approve 24', exc4:'Request Disposition', exc5:'Acknowledge' };
+    if (badge) { badge.className = 'exc-badge badge-' + (cardPriority[origId] === 'urgent' ? 'urgent' : 'high'); badge.textContent = cardPriority[origId] === 'urgent' ? 'Urgent' : 'High'; }
+    var actionsEl = orig.querySelector('.exc-card-actions');
+    if (actionsEl) {
+      var href = origId === 'exc1' ? '?exc=1' : origId === 'exc2' ? '?exc=2' : origId === 'exc3' ? '?exc=3' : '';
+      actionsEl.innerHTML =
+        '<button class="exc-btn-cta" id="cta' + n + '" onclick="acceptCard(\'' + origId + '\')">' + (ctaLabels[origId] || 'Accept') + '</button>' +
+        '<div class="exc-card-sec-actions">' +
+        '<a class="exc-btn-modify" href="exception_detail.html' + href + '">Modify</a>' +
+        '<button class="exc-btn-dismiss" onclick="dismissCard(\'' + origId + '\')">Dismiss</button>' +
+        '</div>';
+    }
+
+    // Restore KPI
+    var priority = cardPriority[origId] || 'decision';
+    if (priority === 'urgent') kpiState.urgent += 1;
+    else kpiState.decision += 1;
+    kpiState.auto = Math.max(4, kpiState.auto - 1);
+    updateKpi();
+
+    // Animate resolved card out, then show original with slide-in
+    resolved.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    resolved.style.opacity = '0';
+    resolved.style.transform = 'translateY(-8px) scale(0.97)';
+    setTimeout(function() {
+      resolved.remove();
+      orig.style.display = '';
+      orig.style.opacity = '0';
+      orig.style.transform = 'translateY(12px) scale(0.97)';
+      orig.style.transition = 'none';
+      void orig.offsetHeight;
+      orig.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+      orig.style.opacity = '1';
+      orig.style.transform = 'translateY(0) scale(1)';
+      setTimeout(function() {
+        orig.style.transition = '';
+        orig.style.transform = '';
+        orig.style.opacity = '';
+      }, 380);
+    }, 320);
+  }
+
+  function dismissBanner() {
+    document.getElementById('agentBanner').classList.add('hidden');
+  }
+
+  // ── AI filter toggle ─────────────────────────────────────────
+  var aiFilterActive = false;
+
+  function toggleAiFilter() {
+    aiFilterActive = !aiFilterActive;
+    var btn       = document.getElementById('aiFilterBtn');
+    var dropdowns = document.getElementById('toolbarDropdowns');
+    var nlBar     = document.getElementById('nlFilterBar');
+
+    btn.classList.toggle('active', aiFilterActive);
+    dropdowns.classList.toggle('hidden', aiFilterActive);
+    nlBar.classList.toggle('visible', aiFilterActive);
+
+    if (aiFilterActive) {
+      document.getElementById('nlInput').focus();
+      document.getElementById('nlSuggestions').classList.add('visible');
+    } else {
+      clearNlFilter();
+      document.getElementById('nlSuggestions').classList.remove('visible');
+    }
+  }
+
+  // ── NL filter logic ──────────────────────────────────────────
+  // Maps keywords → filter values
+  var NL_RULES = [
+    { re: /\b(urgent)\b/i,             field: 'priority', val: 'urgent',   label: 'Urgent' },
+    { re: /\b(high)\b/i,               field: 'priority', val: 'high',     label: 'High' },
+    { re: /\b(auto.?resolv|resolved)\b/i, field: 'priority', val: 'resolved', label: 'Resolved' },
+    { re: /\b(forecast)\b/i,           field: 'type',     val: 'Forecast', label: 'Forecast' },
+    { re: /\b(asn|shipment|overdue)\b/i, field: 'type',   val: 'ASN',      label: 'ASN' },
+    { re: /\b(oc|order.?confirm|deviation)\b/i, field: 'type', val: 'OC', label: 'OC' },
+    { re: /\b(quality|hold)\b/i,       field: 'type',     val: 'Quality',  label: 'Quality' },
+    { re: /\b(volterra)\b/i,           field: 'supplier', val: 'volterra', label: 'Volterra' },
+    { re: /\b(apex)\b/i,               field: 'supplier', val: 'apex',     label: 'Apex Precision' },
+    { re: /\b(global)\b/i,             field: 'supplier', val: 'global',   label: 'Global Parts' },
+    { re: /\b(simco)\b/i,              field: 'supplier', val: 'simco',    label: 'Simco' },
+    { re: /\b(meridian)\b/i,           field: 'supplier', val: 'meridian', label: 'Meridian' },
+    { re: /\b(crestline)\b/i,          field: 'supplier', val: 'crestline',label: 'Crestline' },
+    { re: /\b(precision.?metals|precision)\b/i, field: 'supplier', val: 'precision', label: 'Precision Metals' },
+  ];
+
+  var nlActiveFilters = {};   // { type: 'Forecast', supplier: 'volterra', priority: 'urgent' }
+  var nlTypingTimer = null;
+
+  function onNlInput() {
+    var val = document.getElementById('nlInput').value;
+    document.getElementById('nlClearBtn').classList.toggle('visible', val.length > 0);
+    document.getElementById('nlSuggestions').classList.remove('visible');
+
+    clearTimeout(nlTypingTimer);
+    if (!val.trim()) { nlActiveFilters = {}; renderNlChips(); applyFilters(); return; }
+
+    // Show thinking dots after short pause, then parse
+    document.getElementById('nlThinking').classList.add('visible');
+    nlTypingTimer = setTimeout(function() {
+      document.getElementById('nlThinking').classList.remove('visible');
+      parseNl(val);
+    }, 520);
+  }
+
+  function onNlKey(e) {
+    if (e.key === 'Enter') {
+      clearTimeout(nlTypingTimer);
+      document.getElementById('nlThinking').classList.remove('visible');
+      parseNl(document.getElementById('nlInput').value);
+    }
+    if (e.key === 'Escape') {
+      document.getElementById('nlSuggestions').classList.remove('visible');
+    }
+  }
+
+  function parseNl(text) {
+    var found = {};
+    NL_RULES.forEach(function(rule) {
+      if (rule.re.test(text) && !found[rule.field]) {
+        found[rule.field] = { val: rule.val, label: rule.label };
+      }
+    });
+    nlActiveFilters = found;
+    renderNlChips();
+    applyFilters();
+  }
+
+  function applySuggestion(text) {
+    document.getElementById('nlInput').value = text;
+    document.getElementById('nlClearBtn').classList.add('visible');
+    document.getElementById('nlSuggestions').classList.remove('visible');
+    document.getElementById('nlThinking').classList.add('visible');
+    clearTimeout(nlTypingTimer);
+    nlTypingTimer = setTimeout(function() {
+      document.getElementById('nlThinking').classList.remove('visible');
+      parseNl(text);
+    }, 600);
+  }
+
+  function renderNlChips() {
+    var wrap = document.getElementById('nlChips');
+    wrap.innerHTML = '';
+    Object.keys(nlActiveFilters).forEach(function(field) {
+      var f = nlActiveFilters[field];
+      var chip = document.createElement('span');
+      chip.className = 'nl-chip';
+      chip.innerHTML = f.label + ' <span class="nl-chip-x" onclick="removeNlFilter(\'' + field + '\')">✕</span>';
+      wrap.appendChild(chip);
+    });
+  }
+
+  function removeNlFilter(field) {
+    delete nlActiveFilters[field];
+    renderNlChips();
+    applyFilters();
+    // Sync input text to remaining chips
+    var labels = Object.values(nlActiveFilters).map(function(f){ return f.label; });
+    document.getElementById('nlInput').value = labels.join(' ');
+    document.getElementById('nlClearBtn').classList.toggle('visible', labels.length > 0);
+  }
+
+  function clearNlFilter() {
+    nlActiveFilters = {};
+    document.getElementById('nlInput').value = '';
+    document.getElementById('nlClearBtn').classList.remove('visible');
+    document.getElementById('nlChips').innerHTML = '';
+    document.getElementById('nlSuggestions').classList.remove('visible');
+    document.getElementById('nlThinking').classList.remove('visible');
+    applyFilters();
+  }
+
+  // Close suggestions on outside click
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#nlFilterBar') && !e.target.closest('#aiFilterBtn')) {
+      document.getElementById('nlSuggestions').classList.remove('visible');
+    }
+  });
+  var currentView = 'card';
+  function setView(view) {
+    currentView = view;
+    var cardList  = document.getElementById('excList');
+    var tableView = document.getElementById('excTableView');
+    var btnCard   = document.getElementById('btnCardView');
+    var btnTable  = document.getElementById('btnTableView');
+    if (view === 'card') {
+      cardList.classList.remove('hidden');
+      tableView.classList.remove('visible');
+      btnCard.classList.add('active');
+      btnTable.classList.remove('active');
+    } else {
+      cardList.classList.add('hidden');
+      tableView.classList.add('visible');
+      btnCard.classList.remove('active');
+      btnTable.classList.add('active');
+    }
+    applyFilters();
+  }
+
+  // ── Table-view accept ────────────────────────────────────────
+  function tblAccept(cardId, btnId) {
+    var btn = document.getElementById(btnId);
+    if (!btn || btn.disabled) return;
+    btn.textContent = '✓ Resolved';
+    btn.className = 'tbl-action-btn done';
+    btn.disabled = true;
+    // Keep card view in sync
+    acceptCard(cardId);
+  }
+
+  function applyFilters() {
+    // In AI mode use nlActiveFilters, else use dropdowns
+    var typeVal, supplierVal, priorityVal;
+    if (aiFilterActive) {
+      typeVal     = nlActiveFilters.type     ? nlActiveFilters.type.val     : 'all';
+      supplierVal = nlActiveFilters.supplier ? nlActiveFilters.supplier.val : 'all';
+      priorityVal = nlActiveFilters.priority ? nlActiveFilters.priority.val : 'all';
+    } else {
+      typeVal     = document.getElementById('filterType').value;
+      supplierVal = document.getElementById('filterSupplier').value;
+      priorityVal = document.getElementById('filterPriority').value;
+    }
+
+    var shown = 0;
+
+    // ── Filter card view ─────────────────────────────────────
+    var cards = document.querySelectorAll('#excList .exc-card');
+    cards.forEach(function(card) {
+      if (card.id && card.id.indexOf('-resolved') !== -1) { shown++; return; }
+      if (card.classList.contains('dismissed')) return;
+      if (card.style.display === 'none') return;
+
+      var cardType     = card.getAttribute('data-type') || '';
+      var cardSupplier = card.getAttribute('data-supplier') || '';
+      var cardPri      = card.getAttribute('data-priority') || '';
+
+      var typeMatch     = typeVal === 'all'     || cardType === typeVal;
+      var supplierMatch = supplierVal === 'all' || cardSupplier === supplierVal;
+      var priorityMatch = priorityVal === 'all' || cardPri === priorityVal;
+
+      if (typeMatch && supplierMatch && priorityMatch) {
+        card.style.visibility = '';
+        card.style.maxHeight  = '';
+        card.style.overflow   = '';
+        card.style.marginBottom = '';
+        card.style.opacity    = '';
+        shown++;
+      } else {
+        card.style.visibility  = 'hidden';
+        card.style.maxHeight   = '0';
+        card.style.overflow    = 'hidden';
+        card.style.marginBottom = '0';
+        card.style.opacity     = '0';
+      }
+    });
+    document.querySelectorAll('[id$="-resolved"]').forEach(function(c) { shown++; });
+
+    // ── Filter table view ────────────────────────────────────
+    var tblShown = 0;
+    var tblRows = document.querySelectorAll('#tblView tbody tr');
+    tblRows.forEach(function(row) {
+      if (row.classList.contains('tbl-divider-row')) return;
+
+      var rowType     = row.getAttribute('data-type') || '';
+      var rowSupplier = row.getAttribute('data-supplier') || '';
+      var rowPri      = row.getAttribute('data-priority') || '';
+
+      var typeMatch     = typeVal === 'all'     || rowType === typeVal;
+      var supplierMatch = supplierVal === 'all' || rowSupplier === supplierVal;
+      var priorityMatch = priorityVal === 'all' || rowPri === priorityVal;
+
+      if (typeMatch && supplierMatch && priorityMatch) {
+        row.classList.remove('tbl-row-hidden');
+        tblShown++;
+      } else {
+        row.classList.add('tbl-row-hidden');
+      }
+    });
+
+    var count = currentView === 'table' ? tblShown : shown;
+    document.getElementById('filterShowCount').textContent = count;
+    document.getElementById('inboxCount').textContent = count;
+  }
+
+  // ── Sparkline bars (Exception Trend card) ────────────────────
+  (function() {
+    var days = [
+      { h: 55, color: '#e76500' }, // Mon
+      { h: 62, color: '#e76500' }, // Tue
+      { h: 48, color: '#0064d9' }, // Wed
+      { h: 70, color: '#bb0000' }, // Thu
+      { h: 58, color: '#e76500' }, // Fri
+      { h: 42, color: '#0064d9' }, // Sat
+      { h: 78, color: '#bb0000' }  // Sun (today — highest)
+    ];
+    var container = document.getElementById('sparkbars');
+    if (!container) return;
+    days.forEach(function(d, i) {
+      var bar = document.createElement('div');
+      bar.className = 'cmd-spark-bar' + (i === days.length - 1 ? ' hi' : '');
+      bar.style.height = d.h + '%';
+      if (i !== days.length - 1) bar.style.background = '#c8dcf0';
+      container.appendChild(bar);
+    });
+  })();
+</script>
+
+<script src="shell.js"></script>
+
+</body>
+</html>

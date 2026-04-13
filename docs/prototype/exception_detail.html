@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exception Details — SAP Business Network</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:       #0070f2;
+      --white:       #ffffff;
+      --page-bg:     #f5f6f7;
+      --title:       #1d2d3e;
+      --label:       #556b82;
+      --border:      #e5e5e5;
+      --border-mid:  #d9d9d9;
+      --urgent:      #bb0000;
+      --positive:    #256f3a;
+      --ai-blue:     #0057b8;
+      --info:        #0064d9;
+      --radius-sm:   4px;
+      --radius:      8px;
+    }
+
+    body {
+      font-family: "72","72full",Arial,Helvetica,sans-serif;
+      font-size: 14px;
+      background: var(--page-bg);
+      color: var(--title);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Shell Bar (pixel-accurate) ─────────────────────────── */
+    .app-body { display: flex; flex: 1; min-height: 0; }
+
+    /* ── Side Nav (pixel-accurate) ──────────────────────────── */
+    /* ── Right icon strip (like image) ────────────────────── */
+    /* ── Main Content ────────────────────────────────────────── */
+    .main {
+      flex: 1; display: flex; flex-direction: column;
+      min-height: 0; min-width: 0; overflow: hidden;
+    }
+
+    /* ── Object Page Header ──────────────────────────────────── */
+    .obj-header {
+      background: #fff;
+      border-bottom: 1px solid var(--border-mid);
+      flex-shrink: 0;
+      padding: 0;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 24px 0;
+      font-size: 13px; color: var(--info);
+    }
+    .breadcrumb a { color: var(--info); text-decoration: none; cursor: pointer; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb-sep { color: var(--label); }
+
+    /* Title row */
+    .obj-title-row {
+      padding: 6px 24px 2px;
+    }
+    .obj-title {
+      font-family: "72Black","72Blackfull","72","72full",Arial,sans-serif;
+      font-size: 1.375rem; color: #131e29; line-height: 1.25;
+    }
+    .obj-subtitle {
+      font-size: 13px; color: var(--label); margin-top: 2px;
+    }
+
+    /* AI Recommendation card */
+    .ai-rec-card {
+      margin: 12px 24px 0;
+      background: #fff;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex; gap: 24px; align-items: flex-start;
+    }
+    .ai-rec-card-left { flex: 1; min-width: 0; }
+    .ai-rec-card-right {
+      min-width: 260px; max-width: 320px;
+      font-size: 13px; color: var(--title); line-height: 1.5;
+      border-left: 1px solid var(--border); padding-left: 20px;
+    }
+    .ai-rec-title-row {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 14px; font-weight: 700; color: var(--title);
+      margin-bottom: 6px;
+    }
+    .ai-rec-body { font-size: 13px; color: var(--title); line-height: 1.55; }
+    .ai-rec-links { margin-top: 8px; display: flex; flex-direction: column; gap: 3px; }
+    .ai-rec-link { color: var(--info); font-size: 13px; cursor: pointer; text-decoration: none; }
+    .ai-rec-link:hover { text-decoration: underline; }
+    .ai-rec-actions {
+      display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end;
+    }
+    .btn-accept {
+      font-size: 13px; font-family: inherit; padding: 0 20px; height: 30px;
+      border-radius: var(--radius-sm); border: 1px solid var(--brand);
+      background: var(--brand); color: #fff; cursor: pointer;
+    }
+    .btn-accept:hover { background: #0057c2; border-color: #0057c2; }
+    .btn-modify {
+      font-size: 13px; font-family: inherit; padding: 0 16px; height: 30px;
+      border-radius: var(--radius-sm); border: 1px solid var(--brand);
+      background: #fff; color: var(--brand); cursor: pointer;
+    }
+    .btn-modify:hover { background: #eaf3ff; }
+    .btn-dismiss {
+      font-size: 13px; font-family: inherit; padding: 0 16px; height: 30px;
+      border-radius: var(--radius-sm); border: 1px solid var(--border-mid);
+      background: #fff; color: var(--title); cursor: pointer;
+    }
+    .btn-dismiss:hover { background: #f5f6f7; }
+
+    /* ── Modify Modal ────────────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.35);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: 0 8px 40px rgba(0,0,0,.18);
+      width: 640px;
+      max-width: 94vw;
+      display: flex;
+      flex-direction: column;
+      max-height: 86vh;
+      overflow: hidden;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .modal-title {
+      font-size: 15px; font-weight: 700; color: var(--title);
+    }
+    .modal-subtitle {
+      font-size: 12px; color: var(--label); margin-top: 2px;
+    }
+    .modal-close {
+      width: 28px; height: 28px; border: none; background: none;
+      cursor: pointer; color: var(--label); font-size: 18px; line-height: 1;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-close:hover { background: #f5f6f7; }
+    .modal-body {
+      flex: 1; overflow-y: auto;
+      padding: 16px 20px;
+    }
+    .modal-field-label {
+      font-size: 12px; font-weight: 700; color: var(--label);
+      margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .modal-meta {
+      display: flex; gap: 20px; margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-meta-item { font-size: 12px; color: var(--label); }
+    .modal-meta-item strong { color: var(--title); }
+    .modal-textarea {
+      width: 100%;
+      min-height: 300px;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-family: "72","72full",Arial,Helvetica,sans-serif;
+      font-size: 13px;
+      color: var(--title);
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .modal-textarea:focus { border-color: var(--info); box-shadow: 0 0 0 2px rgba(0,100,217,.1); }
+    .modal-hint {
+      font-size: 11px; color: var(--label); margin-top: 6px;
+    }
+    .modal-footer {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .btn-modal-send {
+      font-size: 13px; font-family: inherit; padding: 0 20px; height: 32px;
+      border-radius: var(--radius-sm); border: none;
+      background: var(--brand); color: #fff; cursor: pointer;
+    }
+    .btn-modal-send:hover { background: #0057c2; }
+    .btn-modal-send:disabled { background: #a0bfdf; cursor: default; }
+    .btn-modal-cancel {
+      font-size: 13px; font-family: inherit; padding: 0 16px; height: 32px;
+      border-radius: var(--radius-sm); border: 1px solid var(--border-mid);
+      background: #fff; color: var(--title); cursor: pointer;
+    }
+    .btn-modal-cancel:hover { background: #f5f6f7; }
+    .modal-sent-msg {
+      display: none;
+      font-size: 13px; color: #256f3a; font-weight: 600;
+      align-items: center; gap: 6px;
+      margin-right: auto;
+    }
+    .modal-sent-msg.show { display: flex; }
+
+    /* Tab bar */
+    .tab-bar {
+      display: flex; align-items: flex-end; gap: 0;
+      padding: 10px 24px 0;
+      margin-top: 10px;
+      overflow-x: auto;
+    }
+    .tab-item {
+      display: flex; flex-direction: column;
+      padding: 0 16px 8px; cursor: pointer;
+      font-size: 14px; font-weight: 400; color: var(--label);
+      border: none; background: none;
+      white-space: nowrap; flex-shrink: 0;
+      border-bottom: 3px solid transparent;
+    }
+    .tab-item:hover { color: var(--title); }
+    .tab-item.active { color: var(--brand); font-weight: 700; border-bottom-color: var(--brand); }
+
+    /* ── Object Page Content ─────────────────────────────────── */
+    .obj-content {
+      flex: 1; overflow-y: auto; padding: 16px 24px 24px;
+      scrollbar-width: none;
+    }
+    .obj-content::-webkit-scrollbar { display: none; }
+
+    /* ── Table card ───────────────────────────────────────────── */
+    .tbl-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .tbl-toolbar {
+      display: flex; align-items: center; justify-content: flex-end;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+    .tbl-icon-btn {
+      width: 30px; height: 30px; border-radius: 6px;
+      border: 1px solid var(--border-mid); background: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--label);
+    }
+    .tbl-icon-btn:hover { background: #f5f6f7; }
+
+    /* Main data table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th {
+      text-align: left; padding: 8px 12px;
+      font-size: 12px; font-weight: 700; color: var(--label);
+      border-bottom: 1px solid var(--border);
+      background: #fff; white-space: nowrap;
+    }
+    .data-table th.num { text-align: right; }
+    .data-table td {
+      padding: 9px 12px; border-bottom: 1px solid var(--border);
+      color: var(--title); vertical-align: middle; white-space: nowrap;
+    }
+    .data-table td.num { text-align: right; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #f9fafb; }
+
+    .val-blue  { color: var(--info); font-weight: 500; }
+    .val-red   { color: var(--urgent); font-weight: 700; }
+    .tbl-link  { color: var(--info); text-decoration: underline; cursor: pointer; }
+
+    /* checkbox col */
+    .cb-col { width: 32px; }
+    input[type="checkbox"] { cursor: pointer; accent-color: var(--info); }
+
+    /* delete icon col */
+    .del-btn {
+      background: none; border: none; cursor: pointer; padding: 4px;
+      color: var(--label); opacity: 0.6;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .del-btn:hover { opacity: 1; color: var(--urgent); }
+
+    /* ── Aera Escalation Banner ─────────────────────────────── */
+    .aera-escalation-banner {
+      display: none;
+      margin-top: 16px;
+      background: #f7f4ff;
+      border: 1px solid #d4c5f9;
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .aera-escalation-banner.hidden { display: none !important; }
+    .aera-esc-icon {
+      width: 32px; height: 32px; flex-shrink: 0;
+      background: #ede8ff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .aera-esc-body { flex: 1; min-width: 0; }
+    .aera-esc-label {
+      font-size: 11px; font-weight: 700; color: #6431fa;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 3px;
+    }
+    .aera-esc-title {
+      font-size: 14px; font-weight: 700; color: #1d2d3e;
+      margin-bottom: 4px; line-height: 1.35;
+    }
+    .aera-esc-desc {
+      font-size: 13px; color: #556b82; line-height: 1.55;
+      margin-bottom: 10px;
+    }
+    .aera-esc-link {
+      font-size: 13px; font-weight: 600; color: #6431fa;
+      text-decoration: none;
+    }
+    .aera-esc-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body data-page="scexceptions">
+
+<div id="bn-shell-root"></div>
+<div class="app-body">
+
+  <div id="bn-sidenav-root"></div>
+  <!-- ── Main ──────────────────────────────────────────── -->
+  <div class="main">
+
+    <!-- Object Page Header -->
+    <div class="obj-header">
+
+      <!-- Breadcrumb -->
+      <div class="breadcrumb">
+        <a href="exception_inbox.html">Exception Inbox</a>
+        <span class="breadcrumb-sep">/</span>
+        <span id="exc-breadcrumb-label" style="color:var(--label)">Exception Details</span>
+        <span class="breadcrumb-sep">/</span>
+      </div>
+
+      <!-- Title -->
+      <div class="obj-title-row">
+        <div class="obj-title" id="exc-title">Forecast Alert: Commit Shortage — Volterra Components · Plant US01</div>
+        <div class="obj-subtitle" id="exc-subtitle">Critical commitment shortage detected for Weeks 4–6 production</div>
+      </div>
+
+      <!-- AI Recommendation card -->
+      <div class="ai-rec-card" id="aiRecCard">
+        <div class="ai-rec-card-left">
+          <div class="ai-rec-title-row">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g clip-path="url(#ai-rec-clip)">
+                <path d="M4.77386 5.51772C5.00416 4.82742 5.99565 4.82746 6.22601 5.51772C7.03711 7.8988 8.09862 8.9593 10.4819 9.76967C11.1728 10.0098 11.1728 11.0005 10.4819 11.2306C8.09867 12.041 7.0371 13.1015 6.22601 15.4826C5.99555 16.1726 5.00425 16.1726 4.77386 15.4826C3.96275 13.1015 2.90125 12.041 0.517998 11.2306C-0.172689 10.9904 -0.172643 9.99991 0.517998 9.76967C2.90124 8.9593 3.96275 7.89878 4.77386 5.51772ZM12.6049 0.284318C12.735 -0.0948015 13.2648 -0.0947441 13.395 0.284318C13.835 1.58216 14.4153 2.16146 15.7153 2.60072C16.095 2.7306 16.0951 3.26972 15.7153 3.39955C14.4153 3.83882 13.835 4.41812 13.395 5.71596C13.2647 6.09477 12.7351 6.09482 12.6049 5.71596C12.1649 4.41812 11.5846 3.83882 10.2846 3.39955C9.90511 3.2696 9.90515 2.73073 10.2846 2.60072C11.5846 2.16146 12.1649 1.58216 12.6049 0.284318Z" fill="#6431fa"/>
+              </g>
+              <defs><clipPath id="ai-rec-clip"><rect width="16" height="16" fill="white"/></clipPath></defs>
+            </svg>
+            <strong>AI Recommendation</strong>
+          </div>
+          <div class="ai-rec-body" id="exc-ai-rec-body"></div>
+        </div>
+        <div class="ai-rec-card-right">
+          <div class="ai-rec-links" id="exc-ai-links">
+            <a class="ai-rec-link">• Forecast Alert Document ID: FA-2026-0324-001</a>
+            <a class="ai-rec-link">• Purchase Orders 4500001010–1012</a>
+          </div>
+          <div class="ai-rec-actions">
+            <button class="btn-accept" id="exc-ai-action-btn" onclick="acceptRec()">Accept</button>
+            <button class="btn-modify" id="exc-ai-modify-btn" onclick="openModifyModal()">Modify</button>
+            <button class="btn-dismiss" onclick="dismissRec()">Dismiss</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab bar -->
+      <div class="tab-bar" id="exc-tab-bar">
+        <button class="tab-item active" onclick="switchTab(this)">Projected Commits</button>
+        <button class="tab-item" onclick="switchTab(this)">Impacted</button>
+        <button class="tab-item" onclick="switchTab(this)">Alternative</button>
+        <button class="tab-item" onclick="switchTab(this)">Inventory Forecast</button>
+        <button class="tab-item" onclick="switchTab(this)">Transfer Time</button>
+        <button class="tab-item" onclick="switchTab(this)">Supplier Chain Map</button>
+        <button class="tab-item" onclick="switchTab(this)">SC Relationship</button>
+        <button class="tab-item" onclick="switchTab(this)">Learning</button>
+      </div>
+    </div><!-- /obj-header -->
+
+    <!-- Object Page Content -->
+    <div class="obj-content">
+
+      <div class="tbl-card">
+        <div class="tbl-toolbar">
+          <!-- delete icon -->
+          <button class="tbl-icon-btn" title="Delete selected">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM4.5 2.5v-1A2 2 0 0 1 6.5 0h3A2 2 0 0 1 11.5 1.5v1h2.25a.75.75 0 0 1 0 1.5H13v9A2 2 0 0 1 11 15H5A2 2 0 0 1 3 13V4H2.25a.75.75 0 0 1 0-1.5H4.5ZM4.5 4v9a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 .5-.5V4H4.5Z" fill="#556b82"/></svg>
+          </button>
+          <!-- copy/export icon -->
+          <button class="tbl-icon-btn" title="Export">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10.5 1a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1H11v3a.5.5 0 0 1-1 0V5.5H7a.5.5 0 0 1 0-1h3V1.5a.5.5 0 0 1 .5-.5ZM1 7.5A1.5 1.5 0 0 1 2.5 6H5a.5.5 0 0 1 0 1H2.5a.5.5 0 0 0-.5.5v6a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5V11a.5.5 0 0 1 1 0v2.5A1.5 1.5 0 0 1 13.5 15h-11A1.5 1.5 0 0 1 1 13.5v-6Z" fill="#556b82"/></svg>
+          </button>
+        </div>
+
+        <table class="data-table">
+          <thead id="exc-thead">
+            <tr>
+              <th class="cb-col"><input type="checkbox" id="chkAll" onclick="toggleAll(this)"/></th>
+              <th>Alert Created Date</th>
+              <th>Supplier</th>
+              <th>Part Number</th>
+              <th>Location</th>
+              <th class="num">Forecast</th>
+              <th class="num">Forecast Commit</th>
+              <th class="num">Difference</th>
+              <th>Week of Exception</th>
+              <th class="num">Week of Impact</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="exc-tbody">
+            <tr>
+              <td class="cb-col"><input type="checkbox"/></td>
+              <td>Dec 08, 2025</td>
+              <td>Volterra Components</td>
+              <td>VLT-XCOMP-680</td>
+              <td>4260 — Plant US01</td>
+              <td class="num val-blue"><a href="forecast_detail.html" class="tbl-link">680</a></td>
+              <td class="num val-red">120</td>
+              <td class="num">560</td>
+              <td>Feb 02, 2026</td>
+              <td class="num">8</td>
+              <td><button class="del-btn" title="Remove"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM4.5 2.5v-1A2 2 0 0 1 6.5 0h3A2 2 0 0 1 11.5 1.5v1h2.25a.75.75 0 0 1 0 1.5H13v9A2 2 0 0 1 11 15H5A2 2 0 0 1 3 13V4H2.25a.75.75 0 0 1 0-1.5H4.5ZM4.5 4v9a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 .5-.5V4H4.5Z" fill="#556b82"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="cb-col"><input type="checkbox"/></td>
+              <td>Dec 08, 2025</td>
+              <td>Volterra Components</td>
+              <td>VLT-XCOMP-680</td>
+              <td>4260 — Plant US01</td>
+              <td class="num val-blue"><a href="forecast_detail.html" class="tbl-link">700</a></td>
+              <td class="num val-red">340</td>
+              <td class="num">360</td>
+              <td>Feb 02, 2026</td>
+              <td class="num">6</td>
+              <td><button class="del-btn" title="Remove"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM4.5 2.5v-1A2 2 0 0 1 6.5 0h3A2 2 0 0 1 11.5 1.5v1h2.25a.75.75 0 0 1 0 1.5H13v9A2 2 0 0 1 11 15H5A2 2 0 0 1 3 13V4H2.25a.75.75 0 0 1 0-1.5H4.5ZM4.5 4v9a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 .5-.5V4H4.5Z" fill="#556b82"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="cb-col"><input type="checkbox"/></td>
+              <td>Dec 08, 2025</td>
+              <td>Volterra Components</td>
+              <td>VLT-XCOMP-680</td>
+              <td>4260 — Plant US01</td>
+              <td class="num val-blue"><a href="forecast_detail.html" class="tbl-link">800</a></td>
+              <td class="num val-red">450</td>
+              <td class="num">350</td>
+              <td>Feb 02, 2026</td>
+              <td class="num">9</td>
+              <td><button class="del-btn" title="Remove"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM4.5 2.5v-1A2 2 0 0 1 6.5 0h3A2 2 0 0 1 11.5 1.5v1h2.25a.75.75 0 0 1 0 1.5H13v9A2 2 0 0 1 11 15H5A2 2 0 0 1 3 13V4H2.25a.75.75 0 0 1 0-1.5H4.5ZM4.5 4v9a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 .5-.5V4H4.5Z" fill="#556b82"/></svg></button></td>
+            </tr>
+            <tr>
+              <td class="cb-col"><input type="checkbox"/></td>
+              <td>Dec 08, 2025</td>
+              <td>Volterra Components</td>
+              <td>VLT-XCOMP-680</td>
+              <td>4260 — Plant US01</td>
+              <td class="num val-blue"><a href="forecast_detail.html" class="tbl-link">600</a></td>
+              <td class="num val-red">280</td>
+              <td class="num">320</td>
+              <td>Feb 02, 2026</td>
+              <td class="num">8</td>
+              <td><button class="del-btn" title="Remove"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM4.5 2.5v-1A2 2 0 0 1 6.5 0h3A2 2 0 0 1 11.5 1.5v1h2.25a.75.75 0 0 1 0 1.5H13v9A2 2 0 0 1 11 15H5A2 2 0 0 1 3 13V4H2.25a.75.75 0 0 1 0-1.5H4.5ZM4.5 4v9a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 .5-.5V4H4.5Z" fill="#556b82"/></svg></button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Aera Escalation Handoff — only shown for exc=1 -->
+      <div class="aera-escalation-banner hidden" id="aeraEscalationBanner">
+        <div class="aera-esc-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g clip-path="url(#ai-esc-clip)">
+              <path d="M4.77386 5.51772C5.00416 4.82742 5.99565 4.82746 6.22601 5.51772C7.03711 7.8988 8.09862 8.9593 10.4819 9.76967C11.1728 10.0098 11.1728 11.0005 10.4819 11.2306C8.09867 12.041 7.0371 13.1015 6.22601 15.4826C5.99555 16.1726 5.00425 16.1726 4.77386 15.4826C3.96275 13.1015 2.90125 12.041 0.517998 11.2306C-0.172689 10.9904 -0.172643 9.99991 0.517998 9.76967C2.90124 8.9593 3.96275 7.89878 4.77386 5.51772ZM12.6049 0.284318C12.735 -0.0948015 13.2648 -0.0947441 13.395 0.284318C13.835 1.58216 14.4153 2.16146 15.7153 2.60072C16.095 2.7306 16.0951 3.26972 15.7153 3.39955C14.4153 3.83882 13.835 4.41812 13.395 5.71596C13.2647 6.09477 12.7351 6.09482 12.6049 5.71596C12.1649 4.41812 11.5846 3.83882 10.2846 3.39955C9.90511 3.2696 9.90515 2.73073 10.2846 2.60072C11.5846 2.16146 12.1649 1.58216 12.6049 0.284318Z" fill="#6431fa"/>
+            </g>
+            <defs><clipPath id="ai-esc-clip"><rect width="16" height="16" fill="white"/></clipPath></defs>
+          </svg>
+        </div>
+        <div class="aera-esc-body">
+          <div class="aera-esc-label">AI Intelligence — Cross-Agent Escalation</div>
+          <div class="aera-esc-title">Broader supplier reliability pattern detected — escalating to Category Management</div>
+          <div class="aera-esc-desc">
+            AI analysis has identified that Volterra's forecast shortages are part of a systemic reliability decline affecting APAC Electronics.
+            Robotech &amp; Volterra together represent 67% of APAC Electronics spend, with a combined OTIF drop from 92% → 81%.
+            Supplier Reliability Intelligence (SRI) has assessed $31.2M spend exposure and recommends initiating renegotiation.
+            Handing off to Marcus Reid — Category Manager.
+          </div>
+          <a class="aera-esc-link" href="supplier_reliability.html">View Supplier Reliability Intelligence →</a>
+        </div>
+      </div>
+
+    </div><!-- /obj-content -->
+
+  </div><!-- /main -->
+
+
+</div><!-- /app-body -->
+
+<script>
+  /* ── Per-exception data ─────────────────────────────────── */
+  var EXC_DATA = {
+    1: {
+      title: 'Send shortage request to Volterra Components — Plant US01 at risk',
+      subtitle: 'Raw material shortage confirmed · Wks 4 & 6 · 12 parts affected · 60% commit rate',
+      breadcrumb: 'Forecast Exception — EXC-2026-001',
+      aiRec: 'Volterra Components has confirmed a raw material shortage at their US01 production line affecting <strong>12 parts across Wks 4 &amp; 6</strong>. Commit rate has fallen to 60% (408 of 680 units/wk), with ASN now tracking at only 45% (306 units). The cumulative erosion trail — Forecast 100% → OC 60% → ASN 45% — confirms a live supply loss at Plant US01. Agent has pre-drafted a shortage resolution request to Volterra with full supply context attached.',
+      aiAction: 'Accept',
+      aiLinks: ['• Forecast Alert ID: FA-2026-0324-001', '• POs: 4500001010, 4500001011, 4500001012', '• Root cause logged: Mar 24, 2026 · Volterra confirmed'],
+      tabs: ['Projected Commits', 'Impacted POs', 'Alternative Sources', 'Inventory Forecast', 'Transfer Time', 'Supplier Chain Map', 'SC Relationship', 'Learning'],
+      tableHead: ['Alert Date', 'Supplier', 'Part Number', 'Location', 'Forecast', 'Commit', 'Gap', 'Wk of Exception', 'Wk of Impact'],
+      tableRows: [
+        ['Mar 24, 2026', 'Volterra Components GmbH', 'VLT-MC-4401', 'Plant US01 (Chicago)', '680', '408', '272', 'Wk 4', 'Wk 4'],
+        ['Mar 24, 2026', 'Volterra Components GmbH', 'VLT-MC-4402', 'Plant US01 (Chicago)', '680', '408', '272', 'Wk 4', 'Wk 5'],
+        ['Mar 24, 2026', 'Volterra Components GmbH', 'VLT-MC-4403', 'Plant US01 (Chicago)', '680', '408', '272', 'Wk 6', 'Wk 6'],
+        ['Mar 24, 2026', 'Volterra Components GmbH', 'VLT-MC-4404', 'Plant US01 (Chicago)', '560', '336', '224', 'Wk 4', 'Wk 5'],
+        ['Mar 24, 2026', 'Volterra Components GmbH', 'VLT-MC-4405', 'Plant US01 (Chicago)', '420', '252', '168', 'Wk 6', 'Wk 7'],
+        ['Mar 24, 2026', 'Volterra Components GmbH', 'VLT-MC-4406', 'Plant US01 (Chicago)', '300', '180', '120', 'Wk 4', 'Wk 6']
+      ],
+      forecastLink: true
+    },
+    2: {
+      title: 'Expedite shipment — Apex Precision missed hard ship date',
+      subtitle: 'PO-4500002201 · PN AP-7732-X · 520 units not shipped · Apr 1 line stoppage risk',
+      breadcrumb: 'ASN Exception — EXC-2026-002',
+      aiRec: 'Apex Precision (Vendor #5014) failed to ship PO-4500002201 by the hard ship date of <strong>Mar 24, 2026</strong>. No ASN has been posted. 520 units of PN AP-7732-X are required at Plant US03 Assembly Line 4 by Apr 1 to avoid line stoppage. Last communication from supplier was Mar 19 — no response since. Agent has identified one alternate source (Meridian Fasteners, 14-day lead time) and pre-drafted an expedite request to Apex with escalation context.',
+      aiAction: 'Send Expedite Request to Apex Precision',
+      aiLinks: ['• PO: 4500002201 · PN: AP-7732-X · 520 units', '• Hard ship date: Mar 24, 2026 (3 days overdue)', '• Alt source: Meridian Fasteners · 14-day lead time'],
+      tabs: ['ASN Status', 'PO Details', 'Delivery History', 'Alternative Sources', 'Contact Log', 'SC Relationship'],
+      tableHead: ['PO Number', 'Part Number', 'Supplier', 'Location', 'Qty Ordered', 'Qty Shipped', 'Hard Ship Date', 'Days Overdue', 'Status'],
+      tableRows: [
+        ['4500002201', 'AP-7732-X', 'Apex Precision · #5014', 'Plant US03 (Austin)', '520', '0', 'Mar 24, 2026', '3', 'NO ASN'],
+      ],
+      forecastLink: false
+    },
+    3: {
+      title: 'Batch-approve 14 in-tolerance OC deviations · escalate 3 flagged',
+      subtitle: '27 open deviations · 24 in-tolerance ready to batch approve · 3 flagged for review',
+      breadcrumb: 'OC Exception — EXC-2026-003',
+      aiRec: 'Volterra Components has submitted OCs reflecting available capacity constrained by the confirmed raw material shortage (root cause linked from EXC-2026-001). Of <strong>27 open deviations</strong>, 24 are within the ±5% tolerance threshold and are recommended for batch approval. 3 deviations exceed tolerance and require individual review: PO-4500001010 (−15%), PO-4500001011 (−20%), PO-4500001012 (+10%). Oldest deviation is 14 days pending. Approving the 24 in-tolerance deviations will unblock downstream ASN processing.',
+      aiAction: 'Batch Approve 24 In-Tolerance Deviations',
+      aiLinks: ['• Linked to: EXC-2026-001 (Forecast shortage, same root cause)', '• Oldest pending: PO-4500001010 · 14 days', '• Tolerance rule: ±5% auto-approve threshold'],
+      tabs: ['OC Deviations', 'PO Details', 'Supplier Context', 'Approval History', 'SC Relationship'],
+      tableHead: ['PO Number', 'Part Number', 'Qty Ordered', 'Qty Confirmed', 'Deviation', 'Days Pending', 'Supplier Reason', 'Status'],
+      tableRows: [
+        ['4500001010', 'VLT-MC-4401', '500', '425', '−15%', '14', 'Capacity constraint · US01 line', 'FLAGGED'],
+        ['4500001011', 'VLT-MC-4402', '300', '240', '−20%', '12', 'Capacity constraint · US01 line', 'FLAGGED'],
+        ['4500001012', 'VLT-MC-4403', '200', '220', '+10%',  '11', 'Overrun — buffer stock allocated', 'FLAGGED'],
+        ['4500001013', 'VLT-MC-4404', '400', '392', '−2%',   '9',  'Capacity constraint · US01 line', 'IN TOLERANCE'],
+        ['4500001014', 'VLT-MC-4405', '350', '347', '−1%',   '8',  'Capacity constraint · US01 line', 'IN TOLERANCE'],
+        ['4500001015', 'VLT-MC-4406', '280', '275', '−2%',   '7',  'Capacity constraint · US01 line', 'IN TOLERANCE'],
+        ['+ 18 more', '—', '—', '—', 'All within ±4%', '≤7', 'Capacity constraint · US01 line', 'IN TOLERANCE'],
+      ],
+      forecastLink: false
+    }
+  };
+
+  function loadExcData() {
+    var params = new URLSearchParams(window.location.search);
+    var id = parseInt(params.get('exc')) || 1;
+    var d = EXC_DATA[id];
+    if (!d) return;
+
+    document.title = d.breadcrumb + ' — SAP Business Network';
+    document.getElementById('exc-breadcrumb-label').textContent = d.breadcrumb;
+    document.getElementById('exc-title').textContent = d.title;
+    document.getElementById('exc-subtitle').textContent = d.subtitle;
+    document.getElementById('exc-ai-rec-body').innerHTML = d.aiRec;
+    document.getElementById('exc-ai-action-btn').innerHTML = d.aiAction;
+    document.getElementById('exc-ai-links').innerHTML = d.aiLinks.map(function(l) {
+      return '<a class="ai-rec-link">' + l + '</a>';
+    }).join('');
+
+    // Tabs
+    var tabBar = document.getElementById('exc-tab-bar');
+    tabBar.innerHTML = d.tabs.map(function(t, i) {
+      return '<button class="tab-item' + (i === 0 ? ' active' : '') + '" onclick="switchTab(this)">' + t + '</button>';
+    }).join('');
+
+    // Table header
+    var thead = document.getElementById('exc-thead');
+    thead.innerHTML = '<tr><th class="cb-col"><input type="checkbox" onclick="toggleAll(this)"/></th>' +
+      d.tableHead.map(function(h) { return '<th>' + h + '</th>'; }).join('') + '<th></th></tr>';
+
+    // Table body
+    var tbody = document.getElementById('exc-tbody');
+    var delSvg = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM4.5 2.5v-1A2 2 0 0 1 6.5 0h3A2 2 0 0 1 11.5 1.5v1h2.25a.75.75 0 0 1 0 1.5H13v9A2 2 0 0 1 11 15H5A2 2 0 0 1 3 13V4H2.25a.75.75 0 0 1 0-1.5H4.5ZM4.5 4v9a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 .5-.5V4H4.5Z" fill="#556b82"/></svg>';
+    tbody.innerHTML = d.tableRows.map(function(row) {
+      var cells = row.map(function(cell, ci) {
+        // PO Number column — placeholder link (PO detail page TBD)
+        if (ci === 0 && d.tableHead[0] === 'PO Number') {
+          return '<td><a href="#" class="tbl-link" onclick="return false;">' + cell + '</a></td>';
+        }
+        // Forecast column (index 4 for exc=1) — link to forecast_detail
+        if (d.forecastLink && ci === 4) {
+          return '<td class="num val-blue"><a href="forecast_detail.html" class="tbl-link">' + cell + '</a></td>';
+        }
+        // Deviation column — color red if negative/large, green if ok
+        if ((id === 3 && ci === 4) || (id === 2 && ci === 7)) {
+          var isFlag = cell === 'NO ASN' || cell.indexOf('−15') !== -1 || cell.indexOf('−20') !== -1 || parseInt(cell) > 2;
+          return '<td class="num ' + (isFlag ? 'val-red' : '') + '">' + cell + '</td>';
+        }
+        // Status column — color by value
+        if (ci === row.length - 1 && (cell === 'FLAGGED' || cell === 'NO ASN')) {
+          return '<td><span style="color:#bb0000;font-weight:700;font-size:11px;">' + cell + '</span></td>';
+        }
+        if (ci === row.length - 1 && cell === 'IN TOLERANCE') {
+          return '<td><span style="color:#256f3a;font-weight:700;font-size:11px;">' + cell + '</span></td>';
+        }
+        var isNum = !isNaN(cell.replace(/[,−\-]/g,'')) && cell !== '—' && cell !== '';
+        return '<td' + (isNum ? ' class="num"' : '') + '>' + cell + '</td>';
+      }).join('');
+      return '<tr><td class="cb-col"><input type="checkbox"/></td>' + cells +
+        '<td><button class="del-btn" title="Remove">' + delSvg + '</button></td></tr>';
+    }).join('');
+  }
+
+  document.addEventListener('DOMContentLoaded', loadExcData);
+
+  // Show Aera escalation banner only for exc=1
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    var id = parseInt(params.get('exc')) || 1;
+    if (id === 1) {
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('aeraEscalationBanner').classList.remove('hidden');
+      });
+    }
+  })();
+
+  function acceptRec() {
+    var card = document.getElementById('aiRecCard');
+    card.style.background = '#f0fff4';
+    card.style.borderColor = '#a3d9b0';
+    var btn = document.getElementById('exc-ai-action-btn');
+    btn.textContent = '✓ Accepted';
+    btn.style.background = '#256f3a';
+    btn.style.borderColor = '#256f3a';
+    btn.disabled = true;
+    var mod = document.getElementById('exc-ai-modify-btn');
+    if (mod) mod.style.display = 'none';
+  }
+
+  var SHORTAGE_REQUEST =
+`Subject: Urgent Shortage Resolution Request — EXC-2026-001 · Plant US01
+
+Dear Volterra Components Supply Team,
+
+We are writing regarding a confirmed raw material shortage affecting our Plant US01 (Chicago) production lines for Weeks 4–6.
+
+SHORTAGE SUMMARY
+─────────────────────────────────────────
+Exception ID:    EXC-2026-001
+Alert Date:      Mar 24, 2026
+Plant:           US01 (Chicago)
+Commit Rate:     60% (408 of 680 units/week)
+ASN Coverage:    45% (306 units)
+
+AFFECTED PARTS
+─────────────────────────────────────────
+  VLT-MC-4401  |  Forecast 680  |  Commit 408  |  Gap 272
+  VLT-MC-4402  |  Forecast 680  |  Commit 408  |  Gap 272
+  VLT-MC-4403  |  Forecast 680  |  Commit 408  |  Gap 272
+  VLT-MC-4404  |  Forecast 560  |  Commit 336  |  Gap 224
+  VLT-MC-4405  |  Forecast 420  |  Commit 252  |  Gap 168
+  VLT-MC-4406  |  Forecast 300  |  Commit 180  |  Gap 120
+
+REQUESTED ACTIONS
+─────────────────────────────────────────
+1. Confirm revised delivery quantities and dates for all affected parts by Apr 15, 2026.
+2. Provide root cause analysis and corrective action plan.
+3. Confirm alternative supply options if full recovery is not possible by Wk 4.
+
+This shortage puts 3 production lines at risk of stoppage. We request urgent escalation within your supply organization.
+
+Please contact us within 24 hours to confirm receipt and next steps.
+
+Best regards,
+SAP Business Network — Supply Chain Operations`;
+
+  function openModifyModal() {
+    document.getElementById('modifyTextarea').value = SHORTAGE_REQUEST;
+    document.getElementById('modifySentMsg').classList.remove('show');
+    document.getElementById('modifySendBtn').disabled = false;
+    document.getElementById('modifySendBtn').textContent = 'Send Request';
+    document.getElementById('modifyModal').classList.add('open');
+  }
+
+  function closeModifyModal() {
+    document.getElementById('modifyModal').classList.remove('open');
+  }
+
+  function sendModified() {
+    var btn = document.getElementById('modifySendBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    setTimeout(function() {
+      document.getElementById('modifySentMsg').classList.add('show');
+      btn.textContent = 'Sent';
+      // Also mark AI card as accepted
+      acceptRec();
+      setTimeout(closeModifyModal, 2000);
+    }, 900);
+  }
+
+  // Close modal on overlay click
+  document.getElementById('modifyModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModifyModal();
+  });
+
+  function dismissRec() {
+    document.getElementById('aiRecCard').style.display = 'none';
+  }
+
+  function switchTab(el) {
+    document.querySelectorAll('.tab-item').forEach(function(t) { t.classList.remove('active'); });
+    el.classList.add('active');
+  }
+
+  function toggleAll(cb) {
+    document.querySelectorAll('.data-table tbody input[type=checkbox]').forEach(function(c) {
+      c.checked = cb.checked;
+    });
+  }
+</script>
+
+<script src="shell.js"></script>
+
+<!-- ── Modify Modal ─────────────────────────────────────── -->
+<div class="modal-overlay" id="modifyModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Modify Shortage Resolution Request</div>
+        <div class="modal-subtitle">AI pre-drafted · Edit before sending to Volterra Components</div>
+      </div>
+      <button class="modal-close" onclick="closeModifyModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-meta">
+        <div class="modal-meta-item">To: <strong>supply.escalations@volterra-components.com</strong></div>
+        <div class="modal-meta-item">Ref: <strong>EXC-2026-001</strong></div>
+        <div class="modal-meta-item">Plant: <strong>US01 (Chicago)</strong></div>
+      </div>
+      <div class="modal-field-label">Message</div>
+      <textarea class="modal-textarea" id="modifyTextarea"></textarea>
+      <div class="modal-hint">✦ AI pre-drafted based on forecast data, PO context, and supplier history. Edit as needed before sending.</div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-sent-msg" id="modifySentMsg">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#256f3a" stroke-width="1.4"/><path d="M5 8l2.5 2.5L11 5.5" stroke="#256f3a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Request sent to Volterra Components
+      </div>
+      <button class="btn-modal-cancel" onclick="closeModifyModal()">Cancel</button>
+      <button class="btn-modal-send" id="modifySendBtn" onclick="sendModified()">Send Request</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

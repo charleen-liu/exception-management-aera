@@ -545,28 +545,34 @@
         ['Mar 24, 2026', 'Volterra Components GmbH', 'VLT-MC-4405', 'Plant US01 (Chicago)', '420', '252', '168', 'Wk 6', 'Wk 7'],
         ['Mar 24, 2026', 'Volterra Components GmbH', 'VLT-MC-4406', 'Plant US01 (Chicago)', '300', '180', '120', 'Wk 4', 'Wk 6']
       ],
-      forecastLink: true
+      forecastLink: true,
+      modifyTitle: 'Modify Shortage Resolution Request',
+      modifySubtitle: 'AI pre-drafted · Edit before sending to Volterra Components',
+      modifyMeta: 'To: <strong>supply.escalations@volterra-components.com</strong> &nbsp;|&nbsp; Ref: <strong>EXC-2026-001</strong> &nbsp;|&nbsp; Plant: <strong>US01 (Chicago)</strong>'
     },
     2: {
       title: 'Expedite shipment — Apex Precision missed hard ship date',
       subtitle: 'PO-4500002201 · PN AP-7732-X · 520 units not shipped · Apr 1 line stoppage risk',
       breadcrumb: 'ASN Exception — EXC-2026-002',
       aiRec: 'Apex Precision (Vendor #5014) failed to ship PO-4500002201 by the hard ship date of <strong>Mar 24, 2026</strong>. No ASN has been posted. 520 units of PN AP-7732-X are required at Plant US03 Assembly Line 4 by Apr 1 to avoid line stoppage. Last communication from supplier was Mar 19 — no response since. Agent has identified one alternate source (Meridian Fasteners, 14-day lead time) and pre-drafted an expedite request to Apex with escalation context.',
-      aiAction: 'Send Expedite Request to Apex Precision',
+      aiAction: 'Accept',
       aiLinks: ['• PO: 4500002201 · PN: AP-7732-X · 520 units', '• Hard ship date: Mar 24, 2026 (3 days overdue)', '• Alt source: Meridian Fasteners · 14-day lead time'],
       tabs: ['ASN Status', 'PO Details', 'Delivery History', 'Alternative Sources', 'Contact Log', 'SC Relationship'],
       tableHead: ['PO Number', 'Part Number', 'Supplier', 'Location', 'Qty Ordered', 'Qty Shipped', 'Hard Ship Date', 'Days Overdue', 'Status'],
       tableRows: [
         ['4500002201', 'AP-7732-X', 'Apex Precision · #5014', 'Plant US03 (Austin)', '520', '0', 'Mar 24, 2026', '3', 'NO ASN'],
       ],
-      forecastLink: false
+      forecastLink: false,
+      modifyTitle: 'Modify Expedite Request',
+      modifySubtitle: 'AI pre-drafted · Edit before sending to Apex Precision',
+      modifyMeta: 'To: <strong>supply.ops@apexprecision.com</strong> &nbsp;|&nbsp; Ref: <strong>EXC-2026-002</strong> &nbsp;|&nbsp; PO: <strong>4500002201</strong>'
     },
     3: {
       title: 'Batch-approve 14 in-tolerance OC deviations · escalate 3 flagged',
       subtitle: '27 open deviations · 24 in-tolerance ready to batch approve · 3 flagged for review',
       breadcrumb: 'OC Exception — EXC-2026-003',
       aiRec: 'Volterra Components has submitted OCs reflecting available capacity constrained by the confirmed raw material shortage (root cause linked from EXC-2026-001). Of <strong>27 open deviations</strong>, 24 are within the ±5% tolerance threshold and are recommended for batch approval. 3 deviations exceed tolerance and require individual review: PO-4500001010 (−15%), PO-4500001011 (−20%), PO-4500001012 (+10%). Oldest deviation is 14 days pending. Approving the 24 in-tolerance deviations will unblock downstream ASN processing.',
-      aiAction: 'Batch Approve 24 In-Tolerance Deviations',
+      aiAction: 'Accept',
       aiLinks: ['• Linked to: EXC-2026-001 (Forecast shortage, same root cause)', '• Oldest pending: PO-4500001010 · 14 days', '• Tolerance rule: ±5% auto-approve threshold'],
       tabs: ['OC Deviations', 'PO Details', 'Supplier Context', 'Approval History', 'SC Relationship'],
       tableHead: ['PO Number', 'Part Number', 'Qty Ordered', 'Qty Confirmed', 'Deviation', 'Days Pending', 'Supplier Reason', 'Status'],
@@ -579,7 +585,10 @@
         ['4500001015', 'VLT-MC-4406', '280', '275', '−2%',   '7',  'Capacity constraint · US01 line', 'IN TOLERANCE'],
         ['+ 18 more', '—', '—', '—', 'All within ±4%', '≤7', 'Capacity constraint · US01 line', 'IN TOLERANCE'],
       ],
-      forecastLink: false
+      forecastLink: false,
+      modifyTitle: 'Modify Batch Approval',
+      modifySubtitle: 'AI pre-drafted · Edit approval note before submitting',
+      modifyMeta: 'Supplier: <strong>Volterra Components</strong> &nbsp;|&nbsp; Ref: <strong>EXC-2026-003</strong> &nbsp;|&nbsp; Deviations: <strong>24 in-tolerance</strong>'
     }
   };
 
@@ -706,11 +715,78 @@ Please contact us within 24 hours to confirm receipt and next steps.
 Best regards,
 SAP Business Network — Supply Chain Operations`;
 
+  var EXPEDITE_REQUEST =
+`Subject: Urgent Expedite Request — PO 4500002201 · Apex Precision
+
+Dear Apex Precision Supply Team,
+
+PO-4500002201 for 520 units of PN AP-7732-X has missed its hard ship date of Mar 24, 2026. No ASN has been received.
+
+EXCEPTION SUMMARY
+─────────────────────────────────────────
+Exception ID:    EXC-2026-002
+PO Number:       4500002201
+Part Number:     AP-7732-X
+Qty Required:    520 units
+Hard Ship Date:  Mar 24, 2026 (OVERDUE)
+Delivery Plant:  US03 Assembly Line 4 (Austin)
+Line Risk Date:  Apr 1, 2026
+
+REQUESTED ACTIONS
+─────────────────────────────────────────
+1. Confirm shipment status and revised ship date immediately.
+2. If unable to ship within 48 hours, please advise on partial shipment options.
+3. Provide ASN no later than 24 hours after goods leave your facility.
+
+Failure to ship by Apr 1 will result in line stoppage at our Austin facility. We have identified an alternative source and will proceed with a split order if no response is received by end of business today.
+
+Please respond urgently.
+
+Best regards,
+SAP Business Network — Supply Chain Operations`;
+
+  var OC_APPROVAL_NOTE =
+`Subject: Batch OC Deviation Approval — EXC-2026-003 · Volterra Components
+
+Dear Volterra Components,
+
+We have reviewed the 27 open order confirmation deviations submitted against our active POs at Plant US01.
+
+APPROVAL SUMMARY
+─────────────────────────────────────────
+Exception ID:       EXC-2026-003
+Total Deviations:   27
+Approved (batch):   24 (within ±5% tolerance threshold)
+Escalated:          3 (exceed tolerance — see below)
+
+BATCH APPROVED — 24 DEVIATIONS
+─────────────────────────────────────────
+All deviations within ±5% tolerance have been approved per standard operating procedure. ASN processing may now proceed for these POs.
+
+ESCALATED FOR REVIEW — 3 DEVIATIONS
+─────────────────────────────────────────
+  PO-4500001010  |  VLT-MC-4401  |  Deviation: −15%  |  Reason: Capacity constraint
+  PO-4500001011  |  VLT-MC-4402  |  Deviation: −20%  |  Reason: Capacity constraint
+  PO-4500001012  |  VLT-MC-4403  |  Deviation: +10%  |  Reason: Overrun — buffer stock
+
+Please provide written confirmation and a corrective action plan for the 3 escalated POs by Apr 16, 2026.
+
+Best regards,
+SAP Business Network — Supply Chain Operations`;
+
   function openModifyModal() {
-    document.getElementById('modifyTextarea').value = SHORTAGE_REQUEST;
+    var params = new URLSearchParams(window.location.search);
+    var id = parseInt(params.get('exc')) || 1;
+    var d = EXC_DATA[id];
+    var bodyText = id === 3 ? OC_APPROVAL_NOTE : id === 2 ? EXPEDITE_REQUEST : SHORTAGE_REQUEST;
+
+    document.getElementById('modifyModalTitle').textContent = d.modifyTitle;
+    document.getElementById('modifyModalSubtitle').textContent = d.modifySubtitle;
+    document.getElementById('modifyModalMeta').innerHTML = d.modifyMeta;
+    document.getElementById('modifyTextarea').value = bodyText;
     document.getElementById('modifySentMsg').classList.remove('show');
     document.getElementById('modifySendBtn').disabled = false;
-    document.getElementById('modifySendBtn').textContent = 'Send Request';
+    document.getElementById('modifySendBtn').textContent = 'Send';
     document.getElementById('modifyModal').classList.add('open');
   }
 
@@ -759,16 +835,14 @@ SAP Business Network — Supply Chain Operations`;
   <div class="modal">
     <div class="modal-header">
       <div>
-        <div class="modal-title">Modify Shortage Resolution Request</div>
-        <div class="modal-subtitle">AI pre-drafted · Edit before sending to Volterra Components</div>
+        <div class="modal-title" id="modifyModalTitle">Modify Request</div>
+        <div class="modal-subtitle" id="modifyModalSubtitle">AI pre-drafted · Edit before sending</div>
       </div>
       <button class="modal-close" onclick="closeModifyModal()">✕</button>
     </div>
     <div class="modal-body">
       <div class="modal-meta">
-        <div class="modal-meta-item">To: <strong>supply.escalations@volterra-components.com</strong></div>
-        <div class="modal-meta-item">Ref: <strong>EXC-2026-001</strong></div>
-        <div class="modal-meta-item">Plant: <strong>US01 (Chicago)</strong></div>
+        <div class="modal-meta-item" id="modifyModalMeta"></div>
       </div>
       <div class="modal-field-label">Message</div>
       <textarea class="modal-textarea" id="modifyTextarea"></textarea>
@@ -777,7 +851,7 @@ SAP Business Network — Supply Chain Operations`;
     <div class="modal-footer">
       <div class="modal-sent-msg" id="modifySentMsg">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#256f3a" stroke-width="1.4"/><path d="M5 8l2.5 2.5L11 5.5" stroke="#256f3a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Request sent to Volterra Components
+        Request sent successfully
       </div>
       <button class="btn-modal-cancel" onclick="closeModifyModal()">Cancel</button>
       <button class="btn-modal-send" id="modifySendBtn" onclick="sendModified()">Send Request</button>

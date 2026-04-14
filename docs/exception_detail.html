@@ -518,6 +518,27 @@
         </div>
       </div>
 
+      <!-- Aera Comment Risk Banner — only shown for exc=4 -->
+      <div class="aera-escalation-banner hidden" id="aeraCommentBanner" style="background:#fff8ec;border-color:#f5c842;">
+        <div class="aera-esc-icon" style="background:#fef3cd;">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 1.5a.5.5 0 0 1 .45.28l6 11A.5.5 0 0 1 14 13.5H2a.5.5 0 0 1-.45-.72l6-11A.5.5 0 0 1 8 1.5zm0 1.06L2.9 12.5h10.2L8 2.56z" fill="#b36200"/>
+            <path d="M7.5 7h1v3h-1zm0 4h1v1h-1z" fill="#b36200"/>
+          </svg>
+        </div>
+        <div class="aera-esc-body">
+          <div class="aera-esc-label" style="color:#b36200;">AI Comment Analysis — Forward Risk Detected</div>
+          <div class="aera-esc-title">Aera detected this risk from SinoElec's free-text ASN remark — no deadline breached yet</div>
+          <div class="aera-esc-desc" style="color:#6b4e00;">
+            Detected comment on ASN for PO-4500003301 at <strong>Apr 14, 04:12 AM</strong>:<br>
+            <span style="display:inline-block;margin-top:6px;padding:8px 12px;background:#fff3cd;border-left:3px solid #f5c842;border-radius:4px;font-style:italic;color:#4a3500;">
+              "Goods ready — note possible port delays at Shenzhen due to labour dispute starting Apr 14."
+            </span><br><br>
+            No threshold was breached. No rule was triggered. Aera read the comment, identified the risk, and created this exception proactively — <strong>before any delay occurred</strong>.
+          </div>
+        </div>
+      </div>
+
     </div><!-- /obj-content -->
 
   </div><!-- /main -->
@@ -589,6 +610,44 @@
       modifyTitle: 'Modify Batch Approval',
       modifySubtitle: 'AI pre-drafted · Edit approval note before submitting',
       modifyMeta: 'Supplier: <strong>Volterra Components</strong> &nbsp;|&nbsp; Ref: <strong>EXC-2026-003</strong> &nbsp;|&nbsp; Deviations: <strong>24 in-tolerance</strong>'
+    },
+    4: {
+      title: 'Proactive risk detected in SinoElec supplier comment — re-route before port strike',
+      subtitle: 'ASN remark flagged by Aera · Port of Shenzhen strike risk · 3 POs · Need-by Apr 18',
+      breadcrumb: 'Comment Risk Alert — EXC-2026-004',
+      aiRec: 'Aera detected a forward risk signal in SinoElec\'s free-text ASN remark on PO-4500003301: <em>"Goods ready — note possible port delays at Shenzhen due to labour dispute starting Apr 14."</em> No deadline has been breached yet, but the need-by date for all 3 affected POs is <strong>Apr 18, 2026</strong> — 4 days away. If the strike proceeds, standard routing will miss the window. Agent has identified an alternative routing via Port of Guangzhou (2-day additional lead time) and pre-drafted a re-routing instruction to SinoElec\'s logistics team. <strong>Acting now avoids a line stoppage; waiting will make recovery impossible.</strong>',
+      aiAction: 'Accept',
+      aiLinks: ['• ASN: SinoElec · PO-4500003301, 3302, 3303 · APAC02', '• Comment detected: Apr 14, 2026 · 04:12 AM', '• Alt route: Port of Guangzhou · ETA Apr 17 (+2 days)'],
+      tabs: ['ASN Comments', 'PO Details', 'Routing Options', 'Delivery History', 'Contact Log', 'SC Relationship'],
+      tableHead: ['ASN / PO Number', 'Part Number', 'Qty', 'Need-By Date', 'Original Route', 'Risk Signal', 'Supplier Comment', 'Status'],
+      tableRows: [
+        ['PO-4500003301', 'SNE-MLCC-2200', '1,200', 'Apr 18, 2026', 'Shenzhen → LA', 'PORT STRIKE RISK', '"Labour dispute starting Apr 14 — possible delays"', 'FLAGGED'],
+        ['PO-4500003302', 'SNE-MLCC-2201', '800',   'Apr 18, 2026', 'Shenzhen → LA', 'PORT STRIKE RISK', '"Same shipment batch — same risk applies"',          'FLAGGED'],
+        ['PO-4500003303', 'SNE-MLCC-2202', '600',   'Apr 18, 2026', 'Shenzhen → LA', 'PORT STRIKE RISK', '"Consignment consolidated with 3301"',               'FLAGGED'],
+      ],
+      forecastLink: false,
+      modifyTitle: 'Modify Re-Routing Instruction',
+      modifySubtitle: 'AI pre-drafted · Edit before sending to SinoElec Logistics',
+      modifyMeta: 'To: <strong>logistics@sinoelec-supply.com</strong> &nbsp;|&nbsp; Ref: <strong>EXC-2026-004</strong> &nbsp;|&nbsp; POs: <strong>3301, 3302, 3303</strong>'
+    },
+    5: {
+      title: 'Escalate unresponsive supplier — GlobalParts, 3 POs with no OC submitted',
+      subtitle: '3 POs · $78K · 2 automated reminders sent · No response · Cut-off in 2 days',
+      breadcrumb: 'Missing OC Alert — EXC-2026-005',
+      aiRec: 'GlobalParts Ltd. (Vendor #6022) has not submitted order confirmations for 3 open POs totalling <strong>$78K</strong>. Aera sent the first automated reminder on Apr 10 and a second on Apr 12 — both unacknowledged. Per configured escalation rules, a 3rd automated reminder was suppressed and the exception has been escalated to the buyer for direct action. The Week 5 OC cut-off is <strong>Apr 16, 2026 (2 days away)</strong>. Missing OC by cut-off will block ASN processing and put downstream production at risk. Agent has pre-drafted a buyer escalation email with full PO context and deadline urgency.',
+      aiAction: 'Accept',
+      aiLinks: ['• Reminder 1 sent: Apr 10 · No response', '• Reminder 2 sent: Apr 12 · No response', '• OC cut-off: Apr 16, 2026 · 2 days remaining'],
+      tabs: ['Missing OCs', 'Reminder History', 'PO Details', 'Supplier Profile', 'Contact Log', 'SC Relationship'],
+      tableHead: ['PO Number', 'Part Number', 'Qty Ordered', 'PO Value', 'OC Due Date', 'Days Overdue', 'Reminders Sent', 'Status'],
+      tableRows: [
+        ['4500004101', 'GLP-CONN-8801', '2,000', '$31,400', 'Apr 10, 2026', '4', '2', 'NO OC'],
+        ['4500004102', 'GLP-CONN-8802', '1,500', '$28,200', 'Apr 10, 2026', '4', '2', 'NO OC'],
+        ['4500004103', 'GLP-CONN-8803', '1,000', '$18,600', 'Apr 11, 2026', '3', '2', 'NO OC'],
+      ],
+      forecastLink: false,
+      modifyTitle: 'Modify Escalation Message',
+      modifySubtitle: 'AI pre-drafted · Edit before sending to GlobalParts Account Manager',
+      modifyMeta: 'To: <strong>account.manager@globalparts-ltd.com</strong> &nbsp;|&nbsp; Ref: <strong>EXC-2026-005</strong> &nbsp;|&nbsp; Value: <strong>$78K</strong>'
     }
   };
 
@@ -655,12 +714,18 @@
   document.addEventListener('DOMContentLoaded', loadExcData);
 
   // Show Aera escalation banner only for exc=1
+  // Show comment risk banner for exc=4
   (function() {
     var params = new URLSearchParams(window.location.search);
     var id = parseInt(params.get('exc')) || 1;
     if (id === 1) {
       document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('aeraEscalationBanner').classList.remove('hidden');
+      });
+    }
+    if (id === 4) {
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('aeraCommentBanner').classList.remove('hidden');
       });
     }
   })();
@@ -774,11 +839,69 @@ Please provide written confirmation and a corrective action plan for the 3 escal
 Best regards,
 SAP Business Network — Supply Chain Operations`;
 
+  var REROUTE_REQUEST =
+`Subject: Urgent Re-Routing Request — EXC-2026-004 · POs 4500003301–3303
+
+Dear SinoElec Logistics Team,
+
+Aera has detected a port disruption risk in your recent ASN remark regarding the Shenzhen labour dispute beginning Apr 14, 2026. We are writing to request an immediate re-routing of the affected shipment to protect our Apr 18 need-by date.
+
+EXCEPTION SUMMARY
+─────────────────────────────────────────
+Exception ID:    EXC-2026-004
+Affected POs:    4500003301 · 4500003302 · 4500003303
+Total Qty:       2,600 units (MLCC series)
+Need-By Date:    Apr 18, 2026
+Original Route:  Port of Shenzhen → Port of Los Angeles
+Risk:            Port labour dispute starting Apr 14
+
+REQUESTED ACTIONS
+─────────────────────────────────────────
+1. Redirect shipment immediately via Port of Guangzhou (estimated ETA Apr 17 — within window).
+2. Confirm revised routing and updated ASN with new vessel and ETA by end of business Apr 14.
+3. If re-routing is not possible, advise on air freight options as a contingency.
+
+Acting now avoids a line stoppage at our APAC02 facility. We appreciate your prompt attention.
+
+Best regards,
+SAP Business Network — Supply Chain Operations`;
+
+  var MISSING_OC_ESCALATION =
+`Subject: Urgent Escalation — Missing Order Confirmations · EXC-2026-005 · GlobalParts
+
+Dear GlobalParts Account Manager,
+
+Despite two automated reminders sent on Apr 10 and Apr 12, we have not received order confirmations for 3 open purchase orders totalling $78K. The Week 5 OC cut-off is Apr 16, 2026 — two days away. Failure to confirm by this deadline will block shipment processing and put our production schedule at risk.
+
+EXCEPTION SUMMARY
+─────────────────────────────────────────
+Exception ID:    EXC-2026-005
+Vendor:          GlobalParts Ltd. (#6022)
+Total PO Value:  $78,200
+OC Cut-Off:      Apr 16, 2026 (2 days remaining)
+
+OPEN PURCHASE ORDERS
+─────────────────────────────────────────
+  PO-4500004101  |  GLP-CONN-8801  |  2,000 units  |  $31,400  |  Due: Apr 10
+  PO-4500004102  |  GLP-CONN-8802  |  1,500 units  |  $28,200  |  Due: Apr 10
+  PO-4500004103  |  GLP-CONN-8803  |  1,000 units  |  $18,600  |  Due: Apr 11
+
+REQUESTED ACTIONS
+─────────────────────────────────────────
+1. Submit OCs for all 3 POs via SAP Business Network immediately.
+2. If supply quantities will deviate, please submit with explanation.
+3. Confirm receipt of this message by end of business Apr 14.
+
+If we do not receive a response by Apr 15, we will be required to initiate emergency alternative sourcing and escalate to procurement leadership.
+
+Best regards,
+SAP Business Network — Supply Chain Operations`;
+
   function openModifyModal() {
     var params = new URLSearchParams(window.location.search);
     var id = parseInt(params.get('exc')) || 1;
     var d = EXC_DATA[id];
-    var bodyText = id === 3 ? OC_APPROVAL_NOTE : id === 2 ? EXPEDITE_REQUEST : SHORTAGE_REQUEST;
+    var bodyText = id === 5 ? MISSING_OC_ESCALATION : id === 4 ? REROUTE_REQUEST : id === 3 ? OC_APPROVAL_NOTE : id === 2 ? EXPEDITE_REQUEST : SHORTAGE_REQUEST;
 
     document.getElementById('modifyModalTitle').textContent = d.modifyTitle;
     document.getElementById('modifyModalSubtitle').textContent = d.modifySubtitle;

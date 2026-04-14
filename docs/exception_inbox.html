@@ -533,19 +533,19 @@
         </div>
         <div class="status-strip-item warn">
           <span class="status-strip-label">Shipment Delays</span>
-          <span class="status-strip-value">4</span>
-          <span class="status-strip-sub">ASN missing or late</span>
+          <span class="status-strip-value">5</span>
+          <span class="status-strip-sub">ASN missing or at risk</span>
         </div>
         <div class="status-strip-item risk">
           <span class="status-strip-label">At-Risk Spend</span>
-          <span class="status-strip-value">$629K</span>
-          <span class="status-strip-sub">across 9 open exceptions</span>
+          <span class="status-strip-value">$765K</span>
+          <span class="status-strip-sub">across 11 open exceptions</span>
         </div>
       </div>
 
       <div class="tab-bar">
         <div class="tab active">
-          <span class="tab-count">9</span>
+          <span class="tab-count">11</span>
           <span class="tab-label">Pending</span>
         </div>
         <div class="tab">
@@ -557,7 +557,7 @@
           <span class="tab-label">Complete</span>
         </div>
         <div class="tab">
-          <span class="tab-count">23</span>
+          <span class="tab-count">25</span>
           <span class="tab-label">All</span>
         </div>
       </div>
@@ -587,6 +587,8 @@
         <option value="Supply Shortage">Supply Shortage</option>
         <option value="Shipment Delay">Shipment Delay</option>
         <option value="OC Deviation">OC Deviation</option>
+        <option value="Comment Risk">Comment Risk</option>
+        <option value="Missing OC">Missing OC</option>
         <option value="Renegotiation">Renegotiation</option>
         <option value="Reliability Risk">Reliability Risk</option>
         <option value="Invoice">Invoice</option>
@@ -690,6 +692,23 @@
             <td class="col-chevron">»</td>
           </tr>
 
+          <!-- Row 4b — Supplier Comment Risk (exc=4) -->
+          <tr class="priority-high" data-status="Pending" data-type="Shipment Delay" data-supplier="SinoElec" onclick="window.location='exception_detail.html?exc=4'">
+            <td class="col-title">
+              Proactive risk: re-route SinoElec shipment before Shenzhen port strike
+              <span class="aera-tag">
+                <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M4.77 5.52C5 4.83 6 4.83 6.23 5.52C7.04 7.9 8.1 8.96 10.48 9.77C11.17 10.01 11.17 11 10.48 11.23C8.1 12.04 7.04 13.1 6.23 15.48C6 16.17 5 16.17 4.77 15.48C3.96 13.1 2.9 12.04 0.52 11.23C-0.17 10.99 -0.17 10 0.52 9.77C2.9 8.96 3.96 7.9 4.77 5.52Z" fill="#6b3fa0"/></svg>
+                Comment Analysis
+              </span>
+            </td>
+            <td class="col-desc">Aera flagged forward risk in SinoElec's ASN remark: "possible port delays at Shenzhen — labour dispute starting Apr 14." 3 POs · need-by Apr 18. No breach yet.</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="col-confidence">91%</td>
+            <td class="col-saving" style="color:#bb0000;">$58K</td>
+            <td class="col-date">Apr 14, 2026</td>
+            <td class="col-chevron">»</td>
+          </tr>
+
           <!-- Row 5 — Robotech OC deviations -->
           <tr class="priority-high" data-status="Pending" data-type="OC Deviation" data-supplier="Robotech" onclick="window.location='exception_detail.html?exc=3'">
             <td class="col-title">Batch-approve 14 in-tolerance OC deviations · escalate 3 flagged</td>
@@ -701,7 +720,24 @@
             <td class="col-chevron">»</td>
           </tr>
 
-          <!-- Row 6 — Missing ASN -->
+          <!-- Row 6b — Missing OC escalation (exc=5) -->
+          <tr class="priority-high" data-status="Pending" data-type="OC Deviation" data-supplier="GlobalParts" onclick="window.location='exception_detail.html?exc=5'">
+            <td class="col-title">
+              Escalate unresponsive supplier — GlobalParts, 3 POs with no OC · cut-off in 2 days
+              <span class="aera-tag">
+                <svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M4.77 5.52C5 4.83 6 4.83 6.23 5.52C7.04 7.9 8.1 8.96 10.48 9.77C11.17 10.01 11.17 11 10.48 11.23C8.1 12.04 7.04 13.1 6.23 15.48C6 16.17 5 16.17 4.77 15.48C3.96 13.1 2.9 12.04 0.52 11.23C-0.17 10.99 -0.17 10 0.52 9.77C2.9 8.96 3.96 7.9 4.77 5.52Z" fill="#6b3fa0"/></svg>
+                Auto-Escalated
+              </span>
+            </td>
+            <td class="col-desc">2 automated reminders sent Apr 10 & Apr 12 — no response. Aera suppressed 3rd reminder and escalated to buyer. OC cut-off Apr 16. $78K at risk.</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="col-confidence">94%</td>
+            <td class="col-saving" style="color:#bb0000;">$78K</td>
+            <td class="col-date">Apr 12, 2026</td>
+            <td class="col-chevron">»</td>
+          </tr>
+
+          <!-- Row 6 — Chase ASN -->
           <tr class="priority-med" data-status="Pending" data-type="Shipment Delay" data-supplier="Volterra" onclick="window.location='exception_detail.html?exc=2'">
             <td class="col-title">Chase ASN confirmations — 2 Volterra shipments unconfirmed, Week 5</td>
             <td class="col-desc">2 shipments expected Week 5 have no ASN submitted. Need-by date approaching within 4 days.</td>
